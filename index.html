@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pomocnik Rymiczny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:#EDEBE6;
+  font-family:'DM Sans',sans-serif;
+  color:#1a1a1a;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{
+  max-width:480px;
+  margin:0 auto;
+  background:#fff;
+  min-height:100vh;
+  position:relative;
+  box-shadow:0 0 60px rgba(0,0,0,0.08);
+  overflow-x:hidden;
+}
+button{border:none;background:none;cursor:pointer;font-family:inherit}
+select{font-family:'DM Sans',sans-serif}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;background:#E8E6E1;border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:#1a1a1a;cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border-radius:50%;
+  background:#1a1a1a;cursor:pointer;border:none;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+@keyframes lyricSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseRing{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:0.85}}
+@keyframes dot{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ─── Song definitions ──────────────────────────────────────── */
+const SONGS = {
+  trgnala: {
+    id:'trgnala', name:'Trgnała Donka',
+    timeSig:7, grouping:[2,2,3], defaultBpm:80,
+    introMeasures:4,
+    pauseMeasures:1,
+    measuresPerLine:2,
+    stanzas:[
+      ['Trgnała Donka na woda lele','Trgnała Donka na woda','Na taja czeszma szarena lele','Po ładna woda studena'],
+      ['Sretna ja owczar budała lele','Sretna ja owczar budała','I na Donka i gowori lele','Daj Done da te celiwam'],
+      ['Dejgidi owczar budała lele','Dejgidi owczar budała','Owde se Donka ne liubi lele','Owde se Donka ne liubi'],
+      ['Wodi me doma wo dwori lele','Wodi me doma wo dwori','Tamu kie Donka celiwasz lele','Tamu kie Donka celiwasz'],
+      ['Majko le stara majczice mori','Majko le stara majczice','Izlezi majko da widisz lele','Cziwo e owa magare'],
+    ],
+  },
+  dere:       { id:'dere',       name:'Dere Geliyor',  comingSoon:true },
+  niePamietam:{ id:'niePamietam',name:'Nie pamiętam',  comingSoon:true },
+};
+
+/* build flat timeline: array of measure descriptors */
+function buildTimeline(song){
+  if(song.comingSoon) return [];
+  const measPerLine=song.measuresPerLine||1;
+  const tl=[];
+  for(let i=0;i<song.introMeasures;i++)
+    tl.push({type:'intro',label:'Drum solo!',expectEntry:false,stanza:-1,line:-1});
+  song.stanzas.forEach((stanza,si)=>{
+    stanza.forEach((text,li)=>{
+      for(let m=0;m<measPerLine;m++)
+        tl.push({type:'verse',label:text,expectEntry:m===0,stanza:si,line:li});
+    });
+    for(let i=0;i<song.pauseMeasures;i++)
+      tl.push({type:'pause',label:'Drum solo!',expectEntry:false,stanza:si,line:-1});
+  });
+  return tl;
+}
+
+function getGroupStarts(grp){
+  const s=new Set([0]); let a=0;
+  grp.slice(0,-1).forEach(g=>{a+=g;s.add(a);});
+  return s;
+}
+
+/* ─── Audio helpers ─────────────────────────────────────────── */
+function playClick(ctx,type,time){
+  const osc=ctx.createOscillator(),g=ctx.createGain();
+  osc.connect(g); g.connect(ctx.destination);
+  const[f,a,d]=type==='accent'?[1050,0.85,0.055]:[520,0.22,0.035];
+  osc.frequency.value=f; g.gain.setValueAtTime(a,time);
+  g.gain.exponentialRampToValueAtTime(0.001,time+d);
+  osc.start(time); osc.stop(time+d);
+}
+
+function computeRMS(data){
+  let s=0;
+  for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v;}
+  return Math.sqrt(s/data.length);
+}
+
+function detectPitch(buf,sr){
+  const n=Math.min(buf.length,1024);
+  let rms=0; for(let i=0;i<n;i++) rms+=buf[i]*buf[i]; rms=Math.sqrt(rms/n);
+  if(rms<0.006) return null;
+  const minP=Math.floor(sr/1100),maxP=Math.ceil(sr/70);
+  let best=0,bestP=-1;
+  for(let p=minP;p<=maxP&&p<n;p++){
+    let num=0,d1=0,d2=0;
+    for(let i=0;i<n-p;i++){num+=buf[i]*buf[i+p];d1+=buf[i]*buf[i];d2+=buf[i+p]*buf[i+p];}
+    const den=Math.sqrt(d1*d2),c=den>0?num/den:0;
+    if(c>best){best=c;bestP=p;}
+  }
+  if(bestP<1||best<0.82) return null;
+  return bestP>0?sr/bestP:null;
+}
+
+/* ─── Checkbox component ────────────────────────────────────── */
+function Checkbox({label,description,checked,onChange}){
+  return(
+    <label
+      onClick={onChange}
+      style={{
+        display:'flex',gap:'16px',cursor:'pointer',userSelect:'none',
+        padding:'0 0 22px',
+      }}
+    >
+      <div style={{
+        marginTop:'2px',width:'24px',height:'24px',flexShrink:0,
+        borderRadius:'6px',
+        border:`2px solid ${checked?'#1a1a1a':'#D5D2CB'}`,
+        background:checked?'#1a1a1a':'transparent',
+        display:'flex',alignItems:'center',justifyContent:'center',
+        transition:'all 0.15s',
+      }}>
+        {checked&&(
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+            <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <div>
+        <div style={{fontSize:'1rem',fontWeight:'600',lineHeight:'1.4',color:'#1a1a1a'}}>
+          {label}
+        </div>
+        {description&&(
+          <div style={{fontSize:'0.875rem',color:'#999',lineHeight:'1.5',marginTop:'2px'}}>
+            {description}
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
+
+/* ─── Beat row ──────────────────────────────────────────────── */
+function BeatRow({timeSig,grouping,activeBeat}){
+  const gs=getGroupStarts(grouping);
+  const items=[];
+  for(let i=0;i<timeSig;i++){
+    const isGS=gs.has(i), isActive=i===activeBeat;
+    if(isGS&&i>0)
+      items.push(<div key={`g${i}`} style={{width:'10px',flexShrink:0}}/>);
+    items.push(
+      <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'5px'}}>
+        <div style={{
+          width:'44px',height:'44px',borderRadius:'8px',flexShrink:0,
+          border:`1.5px solid ${isGS?'#6BBDD8':'#DEDBD4'}`,
+          background:isGS?'#C2E5F5':'#FAFAF8',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          fontFamily:'monospace',fontSize:'0.9rem',
+          fontWeight:isGS?'700':'500',
+          color:isGS?'#1B5E7A':'#B0AC9F',
+          transition:'transform 0.07s ease, box-shadow 0.07s ease',
+          transform:isActive?'scale(1.1)':'scale(1)',
+          boxShadow:isActive?'0 3px 10px rgba(0,0,0,0.14)':'none',
+        }}>{i+1}</div>
+        {/* active underline */}
+        <div style={{
+          height:'3px',width:'28px',borderRadius:'2px',
+          background:isActive?'#3B1505':'transparent',
+          transition:'background 0.07s',
+        }}/>
+      </div>
+    );
+  }
+  return(
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'center',flexWrap:'wrap',gap:'6px'}}>
+      {items}
+    </div>
+  );
+}
+
+/* ─── Divider ───────────────────────────────────────────────── */
+const Divider=()=>(
+  <div style={{height:'1px',background:'#F0EDE8',margin:'4px 0 24px'}}/>
+);
+
+/* ─── Setup Screen ──────────────────────────────────────────── */
+function SetupScreen({onStart}){
+  const[selectedId,setSelectedId]=useState('');
+  const[settings,setSettings]=useState({voice:true,text:true,sound:true,visual:true});
+  const[bpm,setBpm]=useState(80);
+  const song=selectedId?SONGS[selectedId]:null;
+  const canStart=!!(song&&!song.comingSoon);
+  const toggle=k=>setSettings(s=>({...s,[k]:!s[k]}));
+
+  useEffect(()=>{
+    if(song&&!song.comingSoon) setBpm(song.defaultBpm||80);
+  },[selectedId]);
+
+  const groupStr=song&&!song.comingSoon?song.grouping.join('-'):'';
+  const tsLabel=song&&!song.comingSoon?`${song.timeSig}/8`:'';
+
+  return(
+    <div style={{padding:'40px 28px 48px',minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+
+      {/* Title */}
+      <h1 style={{
+        fontFamily:'Syne,sans-serif',fontWeight:800,
+        fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',
+        color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em',
+      }}>
+        Pomocnik<br/>rymiczny
+      </h1>
+
+      {/* Song */}
+      <section style={{marginBottom:'32px'}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'12px'}}>
+          Piosenka
+        </h2>
+        <div style={{position:'relative'}}>
+          <select
+            value={selectedId}
+            onChange={e=>setSelectedId(e.target.value)}
+            style={{
+              width:'100%',padding:'15px 48px 15px 18px',
+              border:'1.5px solid #D5D2CB',borderRadius:'12px',
+              fontSize:'1rem',background:'#fff',
+              color:selectedId?'#1a1a1a':'#BCBCBC',
+              appearance:'none',cursor:'pointer',outline:'none',
+              transition:'border-color 0.15s',
+            }}
+          >
+            <option value="">Wybierz</option>
+            {Object.values(SONGS).map(s=>(
+              <option key={s.id} value={s.id}>
+                {s.name}{s.comingSoon?' (wkrótce)':''}
+              </option>
+            ))}
+          </select>
+          <div style={{
+            position:'absolute',right:'18px',top:'50%',
+            transform:'translateY(-50%)',pointerEvents:'none',
+          }}>
+            <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
+              <path d="M1 1L7 7L13 1" stroke="#888" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* Song info (appears after selection) */}
+      {canStart&&(
+        <div style={{animation:'fadeUp 0.3s ease',marginBottom:'32px'}}>
+          <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'6px'}}>
+            Rytm — {tsLabel}
+          </h2>
+          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'3px'}}>Grupowanie: {groupStr}</p>
+          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'20px'}}>
+            Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'} · każdy wers: {song.measuresPerLine||1} {song.timeSig===7?'siódemki':'dziewiątki'} · przerwa po każdej zwrotce
+          </p>
+          <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
+
+          <div style={{marginTop:'24px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'10px'}}>
+              <span style={{fontSize:'0.85rem',color:'#999'}}>Tempo</span>
+              <span style={{fontFamily:'monospace',fontSize:'0.9rem',fontWeight:'600',color:'#555'}}>
+                {bpm} BPM
+              </span>
+            </div>
+            <input type="range" min="50" max="160" value={bpm}
+              onChange={e=>setBpm(Number(e.target.value))}/>
+          </div>
+        </div>
+      )}
+
+      {song&&song.comingSoon&&(
+        <div style={{
+          padding:'20px 18px',borderRadius:'12px',background:'#F9F8F5',
+          marginBottom:'32px',animation:'fadeUp 0.3s ease',
+          fontSize:'0.9rem',color:'#aaa',textAlign:'center',lineHeight:'1.6',
+        }}>
+          🎵 Ta piosenka jest jeszcze w przygotowaniu
+        </div>
+      )}
+
+      {/* Settings */}
+      <section style={{flex:1,marginBottom:'8px'}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'20px'}}>
+          Ustawienia
+        </h2>
+        <Checkbox
+          label="Wykrywanie głosu"
+          description="Pomocnik wykryje czy wchodzisz w odpowiednim momencie. Konieczne udzielenie dostępu do mikrofonu. Nie musisz śpiewać, możesz ćwiczyć na przykład samo klaskanie."
+          checked={settings.voice} onChange={()=>toggle('voice')}
+        />
+        <Checkbox
+          label="Tekst"
+          description="Ludowe karaoke!"
+          checked={settings.text} onChange={()=>toggle('text')}
+        />
+        <Checkbox
+          label="Dźwięk"
+          description="Metronom wydaje delikatny dźwięk na początku każdej grupy dźwięków."
+          checked={settings.sound} onChange={()=>toggle('sound')}
+        />
+        <Checkbox
+          label="Wizualizacja"
+          description="Dodatkowe wskazówki wizualne."
+          checked={settings.visual} onChange={()=>toggle('visual')}
+        />
+      </section>
+
+      {/* Start */}
+      <button
+        disabled={!canStart}
+        onClick={()=>onStart({song,settings,bpm})}
+        style={{
+          width:'100%',padding:'19px',
+          background:canStart?'#1a1a1a':'#E8E6E1',
+          color:canStart?'#fff':'#C0BDB5',
+          borderRadius:'12px',
+          fontSize:'1.05rem',fontWeight:'700',
+          fontFamily:'Syne,sans-serif',letterSpacing:'0.06em',
+          transition:'all 0.2s',
+          cursor:canStart?'pointer':'not-allowed',
+        }}
+      >
+        Start
+      </button>
+    </div>
+  );
+}
+
+/* ─── Playing Screen ────────────────────────────────────────── */
+function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
+  const timeline=useMemo(()=>buildTimeline(song),[song]);
+
+  const[activeBeat,  setActiveBeat  ]=useState(-1);
+  const[currentEntry,setCurrentEntry]=useState(timeline[0]||null);
+  const[signal,      setSignal      ]=useState(null);
+  const[songEnded,   setSongEnded   ]=useState(false);
+  const[isPaused,    setIsPaused    ]=useState(false);
+  const[lastFeedback,setLastFeedback]=useState(null);
+  const[feedbackHist,setFeedbackHist]=useState([]);
+  const[sensitivity, setSensitivity ]=useState(0.04);
+  const[micOn,       setMicOn       ]=useState(false);
+  const[micError,    setMicError    ]=useState(null);
+  const[volume,      setVolume      ]=useState(0);
+
+  const ctxRef        =useRef(null);
+  const intRef        =useRef(null);
+  const nextT         =useRef(0);
+  const beatR         =useRef(0);
+  const measR         =useRef(0);
+  const playingR      =useRef(false);
+  const isPausedR     =useRef(false);
+  const bpmR          =useRef(initBpm);
+  const soundOnR      =useRef(settings.sound);
+  const timelineR     =useRef(timeline);
+  const timeSigR      =useRef(song.timeSig);
+  const groupingR     =useRef(song.grouping);
+  const expectedEntryR=useRef(null);
+  const isSilentR     =useRef(true);
+  const lastOnsetR    =useRef(0);
+  const sensitivityR  =useRef(sensitivity);
+  const micStreamR    =useRef(null);
+  const analyserR     =useRef(null);
+  const micRafR       =useRef(null);
+  const frameR        =useRef(0);
+  const feedbackTimerR=useRef(null);
+  const missedTimerR  =useRef(null);
+
+  useEffect(()=>{sensitivityR.current=sensitivity;},[sensitivity]);
+
+  /* ── Scheduler ─────────────────────────────────────────────── */
+  const schedule=useCallback(()=>{
+    const ctx=ctxRef.current;
+    if(!ctx||!playingR.current||isPausedR.current) return;
+    const tot=timeSigR.current;
+    const tl =timelineR.current;
+
+    while(nextT.current<ctx.currentTime+0.1){
+      const bi=beatR.current, mi=measR.current;
+
+      if(mi>=tl.length){
+        setTimeout(()=>{playingR.current=false;setSongEnded(true);},0);
+        return;
+      }
+
+      const entry=tl[mi];
+      const grp  =groupingR.current;
+      const gs   =getGroupStarts(grp);
+      const t    =nextT.current;
+
+      const isGS       =gs.has(bi);
+      const nextEntry  =tl[mi+1];
+      const isReady    =bi===tot-1 && nextEntry?.expectEntry===true;
+      const isVerseStart=bi===0 && entry.expectEntry;
+
+      // Accent on beats 1, 3, 5 (index 0, 2, 4)
+      const type=[0,2,4].includes(bi)?'accent':'soft';
+
+      if(soundOnR.current) playClick(ctx,type,t);
+      if(isVerseStart){
+        expectedEntryR.current=t;
+        // Window = 2.5 eighth notes after expected time
+        const windowMs=(30/bpmR.current)*2.5*1000;
+        const entryDelay=Math.max(0,(t-ctx.currentTime)*1000)+windowMs;
+        clearTimeout(missedTimerR.current);
+        missedTimerR.current=setTimeout(()=>{
+          if(expectedEntryR.current!==null&&playingR.current&&!isPausedR.current){
+            // Entry window passed with no onset detected
+            expectedEntryR.current=null;
+            const fb={res:'missed',ms:null,id:Date.now()};
+            setLastFeedback(fb);
+            setFeedbackHist(h=>[fb,...h].slice(0,8));
+            // auto-hide
+            clearTimeout(feedbackTimerR.current);
+            feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
+          }
+        },entryDelay);
+      }
+
+      const delay=Math.max(0,(t-ctx.currentTime)*1000);
+      setTimeout(()=>{
+        if(!playingR.current) return;
+        setActiveBeat(bi);
+        if(bi===0){
+          setCurrentEntry({...entry});
+          if(entry.expectEntry) setSignal('go');
+          else if(entry.type!=='verse') setSignal(null);
+        }
+        if(isReady) setSignal('ready');
+      },delay);
+
+      nextT.current+=30/bpmR.current;
+      beatR.current=(bi+1)%tot;
+      if(beatR.current===0) measR.current+=1;
+    }
+  },[]);
+
+  /* ── Start / stop ──────────────────────────────────────────── */
+  useEffect(()=>{
+    ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
+    playingR.current=true;
+    beatR.current=0; measR.current=0;
+    nextT.current=ctxRef.current.currentTime+0.1;
+    intRef.current=setInterval(schedule,20);
+    if(settings.voice) enableMic();
+    return()=>{
+      playingR.current=false;
+      clearInterval(intRef.current);
+      stopMic();
+    };
+  },[schedule]);
+
+  useEffect(()=>{
+    if(signal==='go'){
+      const t=setTimeout(()=>setSignal(null),950);
+      return()=>clearTimeout(t);
+    }
+  },[signal]);
+
+  /* ── Pause / resume ────────────────────────────────────────── */
+  const togglePause=useCallback(()=>{
+    if(!isPausedR.current){
+      isPausedR.current=true;
+      setIsPaused(true);
+      setActiveBeat(-1);
+      setSignal(null);
+    } else {
+      isPausedR.current=false;
+      setIsPaused(false);
+      nextT.current=ctxRef.current.currentTime+0.12;
+      beatR.current=0;
+    }
+  },[]);
+
+  /* ── Skip verse ────────────────────────────────────────────── */
+  const skipVerse=useCallback((dir)=>{
+    const tl=timelineR.current;
+    const cur=measR.current;
+    let target=-1;
+    if(dir>0){
+      for(let i=cur+1;i<tl.length;i++){
+        if(tl[i].expectEntry){target=i;break;}
+      }
+    } else {
+      // Go to start of current verse line, or previous one
+      const curLineStart=tl.slice(0,cur+1).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
+      const prevStart  =tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
+      target = cur===curLineStart ? prevStart : curLineStart;
+    }
+    if(target<0) return;
+    measR.current=target;
+    beatR.current=0;
+    expectedEntryR.current=null;
+    setCurrentEntry({...tl[target]});
+    setActiveBeat(-1);
+    setSignal(null);
+    if(!isPausedR.current){
+      nextT.current=ctxRef.current.currentTime+0.12;
+    }
+  },[]);
+
+  /* ── Mic ───────────────────────────────────────────────────── */
+  const startMicLoop=useCallback(()=>{
+    const analyser=analyserR.current,ctx=ctxRef.current;
+    if(!analyser||!ctx) return;
+    const bbuf=new Uint8Array(analyser.fftSize);
+    const loop=()=>{
+      micRafR.current=requestAnimationFrame(loop);
+      frameR.current++;
+      analyser.getByteTimeDomainData(bbuf);
+      const rms=computeRMS(bbuf);
+      setVolume(Math.min(rms*6,1));
+      const thr=sensitivityR.current,now=ctx.currentTime;
+      if(isSilentR.current&&rms>thr&&now-lastOnsetR.current>0.4){
+        isSilentR.current=false; lastOnsetR.current=now;
+        if(expectedEntryR.current!==null&&playingR.current&&!isPausedR.current){
+          const diff=now-expectedEntryR.current;
+          const bd=30/bpmR.current;
+          if(Math.abs(diff)<=bd*2.5){
+            const ab=Math.abs(diff);
+            const res=ab<bd*0.6?'perfect':ab<bd*1.4?'good':diff<0?'early':'late';
+            const fb={res,ms:Math.round(diff*1000),id:Date.now()};
+            clearTimeout(missedTimerR.current);
+            clearTimeout(feedbackTimerR.current);
+            setLastFeedback(fb);
+            setFeedbackHist(h=>[fb,...h].slice(0,8));
+            expectedEntryR.current=null;
+            feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
+          }
+        }
+      }else if(!isSilentR.current&&rms<thr*0.45){
+        isSilentR.current=true;
+      }
+    };
+    loop();
+  },[]);
+
+  const enableMic=async()=>{
+    try{
+      if(!navigator.mediaDevices?.getUserMedia) throw{name:'NotSupportedError'};
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const src=ctxRef.current.createMediaStreamSource(stream);
+      const analyser=ctxRef.current.createAnalyser();
+      analyser.fftSize=2048; src.connect(analyser);
+      micStreamR.current=stream; analyserR.current=analyser;
+      setMicOn(true); startMicLoop();
+    }catch(err){
+      const msgs={
+        NotAllowedError:'Dostęp zablokowany — kliknij 🔒 obok adresu i zezwól na mikrofon.',
+        NotFoundError:'Nie znaleziono mikrofonu — sprawdź podłączenie.',
+        NotReadableError:'Mikrofon zajęty przez inną aplikację.',
+        SecurityError:'Strona musi działać przez HTTPS.',
+        NotSupportedError:'Przeglądarka nie obsługuje mikrofonu — użyj Chrome/Firefox.',
+      };
+      setMicError(msgs[err.name]||`Błąd: ${err.name}`);
+    }
+  };
+
+  const stopMic=()=>{
+    cancelAnimationFrame(micRafR.current);
+    micStreamR.current?.getTracks().forEach(t=>t.stop());
+    micStreamR.current=null; analyserR.current=null;
+  };
+
+  /* ── Derived ───────────────────────────────────────────────── */
+  const fbColor=r=>({perfect:'#2E9B58',good:'#BF9A20',early:'#C0402A',late:'#C0402A',missed:'#C0402A'})[r]||'#999';
+  const fbLabel=r=>({perfect:'Idealnie!',good:'Dobrze',early:'Za wcześnie',late:'Za późno',missed:'Ups, przegapione wejście'})[r]||'';
+
+  /* Full stanza context for lyrics display */
+  const stanzaLines=useMemo(()=>{
+    if(!currentEntry||currentEntry.type!=='verse') return null;
+    const{stanza:si,line:li}=currentEntry;
+    const st=song.stanzas;
+    if(si<0||si>=st.length) return null;
+    // Show current stanza + peek at first line of next stanza
+    const lines=st[si].map((text,i)=>({text,i,current:i===li,sung:i<li}));
+    const nextFirst=si+1<st.length?st[si+1][0]:null;
+    return{lines,nextFirst,si};
+  },[currentEntry,song.stanzas]);
+
+  /* Preview of first stanza during intro/pause */
+  const previewLines=useMemo(()=>{
+    if(!song.stanzas||!song.stanzas[0]) return [];
+    return song.stanzas[0];
+  },[song.stanzas]);
+
+  const phaseTag=useMemo(()=>{
+    if(!currentEntry) return '';
+    if(currentEntry.type==='intro') return 'Drum solo!';
+    if(currentEntry.type==='pause') return 'Drum solo!';
+    return`Zwrotka ${currentEntry.stanza+1}`;
+  },[currentEntry]);
+
+  /* ── End screen ────────────────────────────────────────────── */
+  if(songEnded) return(
+    <div style={{
+      minHeight:'100vh',display:'flex',flexDirection:'column',
+      alignItems:'center',justifyContent:'center',
+      padding:'40px 28px',textAlign:'center',
+    }}>
+      <div style={{fontSize:'3rem',marginBottom:'20px',lineHeight:1}}>🎵</div>
+      <h2 style={{
+        fontFamily:'Syne,sans-serif',fontWeight:800,
+        fontSize:'2.2rem',color:'#3B1505',marginBottom:'8px',letterSpacing:'-0.02em',
+      }}>Koniec!</h2>
+      <p style={{color:'#BBB',fontSize:'0.875rem',marginBottom:'36px'}}>
+        {song.name}
+      </p>
+      <div style={{display:'flex',flexDirection:'column',gap:'12px',width:'100%',maxWidth:'280px'}}>
+        <button
+          onClick={onRestart}
+          style={{
+            padding:'17px',background:'#1a1a1a',color:'#fff',
+            borderRadius:'12px',fontSize:'1rem',fontWeight:'700',
+            fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer',
+          }}
+        >
+          Powtórz piosenkę
+        </button>
+        <button
+          onClick={onStop}
+          style={{
+            padding:'17px',background:'transparent',color:'#888',
+            border:'1.5px solid #E0DDD7',
+            borderRadius:'12px',fontSize:'1rem',fontWeight:'600',
+            fontFamily:'DM Sans,sans-serif',cursor:'pointer',
+          }}
+        >
+          Powrót do menu
+        </button>
+      </div>
+    </div>
+  );
+
+  /* ── Playing UI ────────────────────────────────────────────── */
+  const badgeBg   = phaseTag==='Drum solo!'?'#C8E8F5':'#C8E8F5';
+  const badgeColor= phaseTag==='Drum solo!'?'#1D6A8E':'#1D6A8E';
+
+  return(
+    <div style={{
+      minHeight:'100vh',display:'flex',flexDirection:'column',
+      padding:'20px 20px 28px',background:'#fff',
+    }}>
+
+      {/* ── Top bar ── */}
+      <div style={{
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        marginBottom:'20px',gap:'12px',minWidth:0,
+      }}>
+        <div style={{minWidth:0,flex:1,overflow:'hidden'}}>
+          <div style={{
+            fontFamily:'DM Sans,sans-serif',fontWeight:'600',
+            fontSize:'0.78rem',color:'#AAA',
+            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+          }}>Pomocnik rymiczny</div>
+          <div style={{
+            fontFamily:'Syne,sans-serif',fontWeight:700,
+            fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',
+            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+          }}>{song.name}</div>
+        </div>
+        <button onClick={onStop} style={{
+          flexShrink:0,padding:'8px 18px',
+          border:'1.5px solid #E0DDD7',borderRadius:'10px',
+          fontSize:'0.85rem',fontWeight:'600',color:'#666',
+          fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',
+          background:'#fff',
+        }}>Stop</button>
+      </div>
+
+      {/* ── Main card ── */}
+      <div style={{
+        background:'#F2F0EC',borderRadius:'20px',
+        padding:'24px 20px 20px',
+        marginBottom:'20px',
+        flex:1,display:'flex',flexDirection:'column',
+        opacity:isPaused?0.7:1,transition:'opacity 0.2s',
+      }}>
+
+        {/* Badge */}
+        <div style={{textAlign:'center',marginBottom:'16px'}}>
+          <span style={{
+            display:'inline-block',padding:'5px 16px',borderRadius:'30px',
+            background:'#C8E8F5',
+            fontSize:'0.72rem',fontWeight:'800',
+            color:'#1D6A8E',
+            letterSpacing:'0.1em',textTransform:'uppercase',
+          }}>
+            {isPaused?'PAUZA':phaseTag}
+          </span>
+        </div>
+
+        {/* Signal */}
+        <div style={{
+          textAlign:'center',minHeight:'28px',marginBottom:'12px',
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          {!isPaused&&signal==='ready'&&(
+            <span style={{fontSize:'0.82rem',color:'#B0A89E',letterSpacing:'0.08em'}}>za chwilę…</span>
+          )}
+          {!isPaused&&signal==='go'&&(
+            <span style={{
+              fontFamily:'Syne,sans-serif',fontWeight:800,
+              fontSize:'1.4rem',color:'#3B1505',letterSpacing:'0.04em',
+              animation:'pulseRing 0.5s ease',display:'inline-block',
+            }}>TERAZ!</span>
+          )}
+        </div>
+
+        {/* Lyrics */}
+        {settings.text&&(
+          <div style={{
+            textAlign:'center',
+            flex:1,display:'flex',flexDirection:'column',
+            justifyContent:'center',marginBottom:'20px',minHeight:'80px',
+          }}>
+            {stanzaLines?(
+              <>
+                <p key={stanzaLines.lines.find(l=>l.current)?.text} style={{
+                  margin:'0 0 12px',lineHeight:'1.6',
+                  fontSize:'clamp(1rem,3.8vw,1.2rem)',fontWeight:'600',
+                  color:'#1a1a1a',
+                  padding:'8px 12px',borderRadius:'10px',
+                  background:signal==='go'?'#DEEEF9':'transparent',
+                  transition:'background 0.3s',
+                  animation:'lyricSlide 0.2s ease',
+                }}>
+                  {stanzaLines.lines.find(l=>l.current)?.text||''}
+                </p>
+                {(()=>{
+                  const cur=stanzaLines.lines.find(l=>l.current);
+                  const next=cur?stanzaLines.lines.find(l=>l.i===cur.i+1):null;
+                  const nextText=next?.text||stanzaLines.nextFirst||null;
+                  return nextText?(
+                    <p style={{margin:0,fontSize:'0.9rem',color:'#BDBBB7',lineHeight:'1.6'}}>
+                      {nextText}
+                    </p>
+                  ):null;
+                })()}
+              </>
+            ):(
+              <p style={{fontSize:'0.9rem',color:'#C8C4BE',lineHeight:'1.6',fontStyle:'italic'}}>
+                {previewLines[0]||''}
+              </p>
+            )}
+          </div>
+        )}
+        {!settings.text&&<div style={{flex:1}}/>}
+
+        {/* Beat row */}
+        {settings.visual&&(
+          <div style={{marginBottom:'16px'}}>
+            <BeatRow
+              timeSig={song.timeSig}
+              grouping={song.grouping}
+              activeBeat={isPaused?-1:activeBeat}
+            />
+          </div>
+        )}
+
+        {/* Feedback — fixed height slot so controls don't jump */}
+        <div style={{
+          height:'36px',marginBottom:'16px',
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          {lastFeedback&&(
+            <div key={lastFeedback.id} style={{
+              display:'flex',alignItems:'center',gap:'10px',
+              animation:'popIn 0.18s ease',
+            }}>
+              <span style={{
+                fontWeight:'700',fontSize:'0.9rem',
+                color:fbColor(lastFeedback.res),
+              }}>
+                {fbLabel(lastFeedback.res)}
+              </span>
+              {lastFeedback.ms!==null&&(
+                <span style={{fontFamily:'monospace',fontSize:'0.72rem',color:'#B0A89E'}}>
+                  {lastFeedback.ms>0?'+':''}{lastFeedback.ms} ms
+                </span>
+              )}
+              <div style={{display:'flex',gap:'3px',alignItems:'center'}}>
+                {feedbackHist.slice(0,6).map(h=>(
+                  <div key={h.id} style={{
+                    width:'6px',height:'6px',borderRadius:'50%',
+                    background:fbColor(h.res),opacity:0.7,
+                  }}/>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Player controls */}
+        <div style={{
+          display:'flex',alignItems:'center',justifyContent:'center',
+          gap:'16px',
+        }}>
+          <button onClick={()=>skipVerse(-1)} title="Wers wstecz" style={{
+            width:'48px',height:'48px',borderRadius:'50%',border:'none',
+            background:'#E5E2DC',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            color:'#666',fontSize:'1.1rem',
+            transition:'background 0.15s',
+          }}>⏮</button>
+
+          <button onClick={togglePause} style={{
+            width:'72px',height:'72px',borderRadius:'50%',border:'none',
+            background:'#1a1a1a',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            boxShadow:'0 4px 16px rgba(0,0,0,0.2)',
+            transition:'transform 0.15s',
+          }}
+            onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
+            onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+          >
+            {isPaused?(
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            ):(
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            )}
+          </button>
+
+          <button onClick={()=>skipVerse(1)} title="Wers wprzód" style={{
+            width:'48px',height:'48px',borderRadius:'50%',border:'none',
+            background:'#E5E2DC',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            color:'#666',fontSize:'1.1rem',
+            transition:'background 0.15s',
+          }}>⏭</button>
+        </div>
+      </div>
+
+      {/* ── Mic panel — outside card ── */}
+      {settings.voice&&(
+        <div>
+          {micError&&(
+            <div style={{
+              padding:'10px 14px',marginBottom:'10px',
+              background:'#FEF5F4',border:'1px solid #FAD3CE',
+              borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5',
+            }}>⚠️ {micError}</div>
+          )}
+          {micOn&&(
+            <div style={{marginBottom:'8px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'}}>
+                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}}/>
+                <span style={{fontSize:'0.72rem',color:'#AAA'}}>Mikrofon aktywny</span>
+              </div>
+              <div style={{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'}}>
+                <div style={{
+                  height:'100%',borderRadius:'2px',width:`${volume*100}%`,
+                  background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',
+                  transition:'width 0.05s,background 0.15s',
+                }}/>
+              </div>
+            </div>
+          )}
+          {micOn&&(
+            <div style={{marginBottom:'8px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
+                <span style={{fontSize:'0.68rem',color:'#CCC'}}>Czułość mikrofonu</span>
+                <span style={{fontFamily:'monospace',fontSize:'0.68rem',color:'#CCC'}}>{Math.round(sensitivity*1000)}</span>
+              </div>
+              <input type="range" min="5" max="80"
+                value={Math.round(sensitivity*1000)}
+                onChange={e=>setSensitivity(Number(e.target.value)/1000)}/>
+            </div>
+          )}
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── App root ──────────────────────────────────────────────── */
+function App(){
+  const[screen,setScreen]=useState('setup');
+  const[cfg,setCfg]=useState(null);
+  const[playKey,setPlayKey]=useState(0);
+
+  const handleStart=c=>{setCfg(c);setScreen('playing');setPlayKey(k=>k+1);};
+  const handleRestart=()=>setPlayKey(k=>k+1);
+
+  return(
+    <div className="shell">
+      {screen==='setup'&&(
+        <SetupScreen onStart={handleStart}/>
+      )}
+      {screen==='playing'&&cfg&&(
+        <PlayingScreen
+          key={playKey}
+          song={cfg.song}
+          settings={cfg.settings}
+          bpm={cfg.bpm}
+          onStop={()=>setScreen('setup')}
+          onRestart={handleRestart}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
