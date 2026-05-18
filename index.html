@@ -3,9 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pomocnik rymiczny</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<title>Pomocnik Rytmiczny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:#EDEBE6;font-family:'DM Sans',sans-serif;color:#1a1a1a;-webkit-font-smoothing:antialiased;}
@@ -20,18 +25,22 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 @keyframes lyricSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulseRing{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:0.85}}
 @keyframes dot{0%,100%{opacity:.3}50%{opacity:1}}
+
 </style>
 </head>
 <body>
-<div class="shell" id="app"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
 
-<script>
 /* ─── Song definitions ──────────────────────────────────────── */
 const SONGS = {
   trgnala: {
     id:'trgnala', name:'Trgnała Donka',
     timeSig:7, grouping:[2,2,3], defaultBpm:80,
     introMeasures:4, pauseMeasures:1,
+    // stanzas: array of lines, each line = array of measure-segments (one per 7/8)
+    // first word of each segment = measure downbeat → bolded + blue in display
     stanzas:[
       [
         ["Trgnała","Donka na","woda lele"],
@@ -79,7 +88,7 @@ const SONGS = {
   niePamietam:{ id:'niePamietam',name:'Nie pamiętam',  comingSoon:true },
 };
 
-/* ─── Timeline builder ──────────────────────────────────────── */
+/* build flat timeline: one entry per 7/8 measure */
 function buildTimeline(song){
   if(song.comingSoon) return [];
   const tl=[];
@@ -103,7 +112,7 @@ function getGroupStarts(grp){
   return s;
 }
 
-/* ─── Audio ─────────────────────────────────────────────────── */
+/* ─── Audio helpers ─────────────────────────────────────────── */
 function playClick(ctx,type,time){
   const osc=ctx.createOscillator(),g=ctx.createGain();
   osc.connect(g); g.connect(ctx.destination);
@@ -119,678 +128,475 @@ function computeRMS(data){
   return Math.sqrt(s/data.length);
 }
 
-/* ─── DOM helpers ───────────────────────────────────────────── */
-function el(tag, styles={}, attrs={}, children=[]){
-  const e=document.createElement(tag);
-  Object.assign(e.style, styles);
-  Object.entries(attrs).forEach(([k,v])=>{ if(k==='class') e.className=v; else e.setAttribute(k,v); });
-  children.forEach(c=>{ if(c==null) return; if(typeof c==='string') e.appendChild(document.createTextNode(c)); else e.appendChild(c); });
-  return e;
+function detectPitch(buf,sr){
+  const n=Math.min(buf.length,1024);
+  let rms=0; for(let i=0;i<n;i++) rms+=buf[i]*buf[i]; rms=Math.sqrt(rms/n);
+  if(rms<0.006) return null;
+  const minP=Math.floor(sr/1100),maxP=Math.ceil(sr/70);
+  let best=0,bestP=-1;
+  for(let p=minP;p<=maxP&&p<n;p++){
+    let num=0,d1=0,d2=0;
+    for(let i=0;i<n-p;i++){num+=buf[i]*buf[i+p];d1+=buf[i]*buf[i];d2+=buf[i+p]*buf[i+p];}
+    const den=Math.sqrt(d1*d2),c=den>0?num/den:0;
+    if(c>best){best=c;bestP=p;}
+  }
+  if(bestP<1||best<0.82) return null;
+  return bestP>0?sr/bestP:null;
 }
 
-function svg(w,h,viewBox,pathD,fill){
-  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  s.setAttribute('width',w); s.setAttribute('height',h); s.setAttribute('viewBox',viewBox);
-  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-  p.setAttribute('d',pathD); p.setAttribute('fill',fill);
-  s.appendChild(p); return s;
+/* ─── Checkbox component ────────────────────────────────────── */
+function Checkbox({label,description,checked,onChange}){
+  return(
+    <label
+      onClick={onChange}
+      style={{
+        display:'flex',gap:'16px',cursor:'pointer',userSelect:'none',
+        padding:'0 0 22px',
+      }}
+    >
+      <div style={{
+        marginTop:'2px',width:'24px',height:'24px',flexShrink:0,
+        borderRadius:'6px',
+        border:`2px solid ${checked?'#1a1a1a':'#D5D2CB'}`,
+        background:checked?'#1a1a1a':'transparent',
+        display:'flex',alignItems:'center',justifyContent:'center',
+        transition:'all 0.15s',
+      }}>
+        {checked&&(
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+            <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <div>
+        <div style={{fontSize:'1rem',fontWeight:'600',lineHeight:'1.4',color:'#1a1a1a'}}>
+          {label}
+        </div>
+        {description&&(
+          <div style={{fontSize:'0.875rem',color:'#999',lineHeight:'1.5',marginTop:'2px'}}>
+            {description}
+          </div>
+        )}
+      </div>
+    </label>
+  );
 }
 
-/* ─── BeatRow ───────────────────────────────────────────────── */
-function renderBeatRow(timeSig, grouping, activeBeat, noAccent){
+/* ─── Beat row ──────────────────────────────────────────────── */
+function BeatRow({timeSig,grouping,activeBeat,noAccent}){
   const gs=getGroupStarts(grouping);
-  const row=el('div',{display:'flex',alignItems:'flex-start',flexWrap:'nowrap',width:'100%'});
+  const items=[];
   for(let i=0;i<timeSig;i++){
     const isGS=gs.has(i), isActive=i===activeBeat;
+    // Beat 1 gets blue only when noAccent is false
     const isMain=i===0&&!noAccent;
-    if(isGS&&i>0){
-      row.appendChild(el('div',{width:'8px',flexShrink:'0'}));
-    }
-    const box=el('div',{
-      width:'100%', aspectRatio:'1', borderRadius:'8px',
-      maxWidth:'52px',
-      border:`1.5px solid ${isMain?'#6BBDD8':'#DEDBD4'}`,
-      background:isMain?'#C2E5F5':'#FAFAF8',
-      display:'flex', alignItems:'center', justifyContent:'center',
-      fontFamily:'monospace', fontSize:'clamp(0.65rem,2.5vw,0.9rem)',
-      fontWeight:isGS?'700':'500',
-      color:isMain?'#1B5E7A':'#B0AC9F',
-      transition:'transform 0.07s ease, box-shadow 0.07s ease',
-      transform:isActive?'scale(1.1)':'scale(1)',
-      boxShadow:isActive?'0 3px 10px rgba(0,0,0,0.14)':'none',
-      boxSizing:'border-box',
-    }, {}, [String(i+1)]);
-    const dot=el('div',{
-      height:'3px', width:'60%', maxWidth:'28px', borderRadius:'2px',
-      background:isActive?'#3B1505':'transparent',
-      transition:'background 0.07s',
-    });
-    const cell=el('div',{flex:'1',minWidth:'0',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'});
-    cell.appendChild(box); cell.appendChild(dot);
-    row.appendChild(cell);
+    if(isGS&&i>0)
+      items.push(<div key={`g${i}`} style={{width:'8px',flexShrink:0}}/>);
+    items.push(
+      <div key={i} style={{
+        flex:1,minWidth:0,
+        display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',
+      }}>
+        <div style={{
+          width:'100%',aspectRatio:'1',borderRadius:'8px',
+          maxWidth:'52px',
+          border:`1.5px solid ${isMain?'#6BBDD8':'#DEDBD4'}`,
+          background:isMain?'#C2E5F5':'#FAFAF8',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          fontFamily:'monospace',fontSize:'clamp(0.65rem,2.5vw,0.9rem)',
+          fontWeight:isGS?'700':'500',
+          color:isMain?'#1B5E7A':'#B0AC9F',
+          transition:'transform 0.07s ease, box-shadow 0.07s ease',
+          transform:isActive?'scale(1.1)':'scale(1)',
+          boxShadow:isActive?'0 3px 10px rgba(0,0,0,0.14)':'none',
+          boxSizing:'border-box',
+        }}>{i+1}</div>
+        <div style={{
+          height:'3px',width:'60%',maxWidth:'28px',borderRadius:'2px',
+          background:isActive?'#3B1505':'transparent',
+          transition:'background 0.07s',
+        }}/>
+      </div>
+    );
   }
-  return row;
+  return(
+    <div style={{display:'flex',alignItems:'flex-start',flexWrap:'nowrap',width:'100%'}}>
+      {items}
+    </div>
+  );
 }
 
-/* ─── Checkbox ──────────────────────────────────────────────── */
-function renderCheckbox(label, description, checked, onChange){
-  const checkIcon = `<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const box=el('div',{
-    marginTop:'2px', width:'24px', height:'24px', flexShrink:'0',
-    borderRadius:'6px',
-    border:`2px solid ${checked?'#1a1a1a':'#D5D2CB'}`,
-    background:checked?'#1a1a1a':'transparent',
-    display:'flex', alignItems:'center', justifyContent:'center',
-    transition:'all 0.15s',
-  });
-  if(checked) box.innerHTML=checkIcon;
-
-  const textDiv=el('div',{});
-  textDiv.appendChild(el('div',{fontSize:'1rem',fontWeight:'600',lineHeight:'1.4',color:'#1a1a1a'},[],[label]));
-  if(description) textDiv.appendChild(el('div',{fontSize:'0.875rem',color:'#999',lineHeight:'1.5',marginTop:'2px'},[],[description]));
-
-  const wrap=el('label',{display:'flex',gap:'16px',cursor:'pointer',userSelect:'none',padding:'0 0 22px'});
-  wrap.appendChild(box); wrap.appendChild(textDiv);
-  wrap.addEventListener('click', e=>{
-    e.preventDefault();
-    onChange();
-  });
-  return {el:wrap, updateCheck:(c)=>{
-    box.style.border=`2px solid ${c?'#1a1a1a':'#D5D2CB'}`;
-    box.style.background=c?'#1a1a1a':'transparent';
-    box.innerHTML=c?checkIcon:'';
-  }};
-}
+/* ─── Divider ───────────────────────────────────────────────── */
+const Divider=()=>(
+  <div style={{height:'1px',background:'#F0EDE8',margin:'4px 0 24px'}}/>
+);
 
 /* ─── Setup Screen ──────────────────────────────────────────── */
-function SetupScreen(onStart){
-  let selectedId='';
-  let settings={voice:true,text:true,sound:true,visual:true};
-  let bpm=80;
+function SetupScreen({onStart}){
+  const[selectedId,setSelectedId]=useState('');
+  const[settings,setSettings]=useState({voice:true,text:true,sound:true,visual:true});
+  const[bpm,setBpm]=useState(80);
+  const song=selectedId?SONGS[selectedId]:null;
+  const canStart=!!(song&&!song.comingSoon);
+  const toggle=k=>setSettings(s=>({...s,[k]:!s[k]}));
 
-  const root=el('div',{padding:'40px 28px 48px',minHeight:'100vh',display:'flex',flexDirection:'column'});
+  useEffect(()=>{
+    if(song&&!song.comingSoon) setBpm(song.defaultBpm||80);
+  },[selectedId]);
 
-  // Title
-  root.appendChild(el('h1',{
-    fontFamily:'Syne,sans-serif',fontWeight:'800',
-    fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',
-    color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em',
-  },[],['Pomocnik\u00A0rymiczny']));
-  // Use innerHTML for the line break
-  root.querySelector('h1').innerHTML='Pomocnik<br/>rymiczny';
+  const groupStr=song&&!song.comingSoon?song.grouping.join('-'):'';
+  const tsLabel=song&&!song.comingSoon?`${song.timeSig}/8`:'';
 
-  // Song section
-  const songSection=el('section',{marginBottom:'32px'});
-  songSection.appendChild(el('h2',{fontFamily:'Syne,sans-serif',fontWeight:'700',fontSize:'1.2rem',marginBottom:'12px'},[],['Piosenka']));
-  const selectWrap=el('div',{position:'relative'});
-  const selectEl=el('select',{
-    width:'100%',padding:'15px 48px 15px 18px',
-    border:'1.5px solid #D5D2CB',borderRadius:'12px',
-    fontSize:'1rem',background:'#fff',color:'#BCBCBC',
-    appearance:'none',cursor:'pointer',outline:'none',
-    transition:'border-color 0.15s',
-  });
-  selectEl.innerHTML='<option value="">Wybierz</option>'+
-    Object.values(SONGS).map(s=>`<option value="${s.id}">${s.name}${s.comingSoon?' (wkrótce)':''}</option>`).join('');
+  return(
+    <div style={{padding:'40px 28px 48px',minHeight:'100vh',display:'flex',flexDirection:'column'}}>
 
-  const chevron=el('div',{position:'absolute',right:'18px',top:'50%',transform:'translateY(-50%)',pointerEvents:'none'});
-  chevron.innerHTML=`<svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 1L7 7L13 1" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  selectWrap.appendChild(selectEl); selectWrap.appendChild(chevron);
-  songSection.appendChild(selectWrap);
-  root.appendChild(songSection);
+      {/* Title */}
+      <h1 style={{
+        fontFamily:'Syne,sans-serif',fontWeight:800,
+        fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',
+        color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em',
+      }}>
+        Pomocnik<br/>rymiczny
+      </h1>
 
-  // Song info panel (dynamic)
-  const infoPanel=el('div',{display:'none',marginBottom:'32px'});
-  root.appendChild(infoPanel);
+      {/* Song */}
+      <section style={{marginBottom:'32px'}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'12px'}}>
+          Piosenka
+        </h2>
+        <div style={{position:'relative'}}>
+          <select
+            value={selectedId}
+            onChange={e=>setSelectedId(e.target.value)}
+            style={{
+              width:'100%',padding:'15px 48px 15px 18px',
+              border:'1.5px solid #D5D2CB',borderRadius:'12px',
+              fontSize:'1rem',background:'#fff',
+              color:selectedId?'#1a1a1a':'#BCBCBC',
+              appearance:'none',cursor:'pointer',outline:'none',
+              transition:'border-color 0.15s',
+            }}
+          >
+            <option value="">Wybierz</option>
+            {Object.values(SONGS).map(s=>(
+              <option key={s.id} value={s.id}>
+                {s.name}{s.comingSoon?' (wkrótce)':''}
+              </option>
+            ))}
+          </select>
+          <div style={{
+            position:'absolute',right:'18px',top:'50%',
+            transform:'translateY(-50%)',pointerEvents:'none',
+          }}>
+            <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
+              <path d="M1 1L7 7L13 1" stroke="#888" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </section>
 
-  // Settings
-  const settingsSection=el('section',{flex:'1',marginBottom:'8px'});
-  settingsSection.appendChild(el('h2',{fontFamily:'Syne,sans-serif',fontWeight:'700',fontSize:'1.2rem',marginBottom:'20px'},[],['Ustawienia']));
+      {/* Song info (appears after selection) */}
+      {canStart&&(
+        <div style={{animation:'fadeUp 0.3s ease',marginBottom:'32px'}}>
+          <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'6px'}}>
+            Rytm — {tsLabel}
+          </h2>
+          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'3px'}}>Grupowanie: {groupStr}</p>
+          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'20px'}}>
+            Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'} · przerwa po każdej zwrotce
+          </p>
+          <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
 
-  const checkboxes={};
-  const cbDefs=[
-    {key:'voice',label:'Wykrywanie głosu',desc:'Pomocnik wykryje czy wchodzisz w odpowiednim momencie. Konieczne udzielenie dostępu do mikrofonu. Nie musisz śpiewać, możesz ćwiczyć na przykład samo klaskanie.'},
-    {key:'text',label:'Tekst',desc:'Ludowe karaoke!'},
-    {key:'sound',label:'Dźwięk',desc:'Metronom wydaje delikatny dźwięk na początku każdej grupy dźwięków.'},
-    {key:'visual',label:'Wizualizacja',desc:'Dodatkowe wskazówki wizualne.'},
-  ];
-  cbDefs.forEach(({key,label,desc})=>{
-    const cb=renderCheckbox(label,desc,settings[key],()=>{
-      settings[key]=!settings[key];
-      cb.updateCheck(settings[key]);
-      updateStartBtn();
-    });
-    checkboxes[key]=cb;
-    settingsSection.appendChild(cb.el);
-  });
-  root.appendChild(settingsSection);
+          <div style={{marginTop:'24px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'10px'}}>
+              <span style={{fontSize:'0.85rem',color:'#999'}}>Tempo</span>
+              <span style={{fontFamily:'monospace',fontSize:'0.9rem',fontWeight:'600',color:'#555'}}>
+                {bpm} BPM
+              </span>
+            </div>
+            <input type="range" min="50" max="160" value={bpm}
+              onChange={e=>setBpm(Number(e.target.value))}/>
+          </div>
+        </div>
+      )}
 
-  // Start button
-  const startBtn=el('button',{
-    width:'100%',padding:'19px',
-    background:'#E8E6E1',color:'#C0BDB5',
-    borderRadius:'12px',fontSize:'1.05rem',fontWeight:'700',
-    fontFamily:'Syne,sans-serif',letterSpacing:'0.06em',
-    transition:'all 0.2s',cursor:'not-allowed',
-  },[],['Start']);
-  root.appendChild(startBtn);
+      {song&&song.comingSoon&&(
+        <div style={{
+          padding:'20px 18px',borderRadius:'12px',background:'#F9F8F5',
+          marginBottom:'32px',animation:'fadeUp 0.3s ease',
+          fontSize:'0.9rem',color:'#aaa',textAlign:'center',lineHeight:'1.6',
+        }}>
+          🎵 Ta piosenka jest jeszcze w przygotowaniu
+        </div>
+      )}
 
-  function updateStartBtn(){
-    const song=selectedId?SONGS[selectedId]:null;
-    const canStart=!!(song&&!song.comingSoon);
-    startBtn.style.background=canStart?'#1a1a1a':'#E8E6E1';
-    startBtn.style.color=canStart?'#fff':'#C0BDB5';
-    startBtn.style.cursor=canStart?'pointer':'not-allowed';
-    startBtn.disabled=!canStart;
-  }
+      {/* Settings */}
+      <section style={{flex:1,marginBottom:'8px'}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'20px'}}>
+          Ustawienia
+        </h2>
+        <Checkbox
+          label="Wykrywanie głosu"
+          description="Pomocnik wykryje czy wchodzisz w odpowiednim momencie. Konieczne udzielenie dostępu do mikrofonu. Nie musisz śpiewać, możesz ćwiczyć na przykład samo klaskanie."
+          checked={settings.voice} onChange={()=>toggle('voice')}
+        />
+        <Checkbox
+          label="Tekst"
+          description="Ludowe karaoke!"
+          checked={settings.text} onChange={()=>toggle('text')}
+        />
+        <Checkbox
+          label="Dźwięk"
+          description="Metronom wydaje delikatny dźwięk na początku każdej grupy dźwięków."
+          checked={settings.sound} onChange={()=>toggle('sound')}
+        />
+        <Checkbox
+          label="Wizualizacja"
+          description="Dodatkowe wskazówki wizualne."
+          checked={settings.visual} onChange={()=>toggle('visual')}
+        />
+      </section>
 
-  function updateInfoPanel(){
-    infoPanel.innerHTML='';
-    const song=selectedId?SONGS[selectedId]:null;
-    if(!song){ infoPanel.style.display='none'; return; }
-    if(song.comingSoon){
-      infoPanel.style.display='block';
-      infoPanel.style.animation='fadeUp 0.3s ease';
-      const soon=el('div',{
-        padding:'20px 18px',borderRadius:'12px',background:'#F9F8F5',
-        fontSize:'0.9rem',color:'#aaa',textAlign:'center',lineHeight:'1.6',
-      },[],['🎵 Ta piosenka jest jeszcze w przygotowaniu']);
-      infoPanel.appendChild(soon);
-      return;
-    }
-    infoPanel.style.display='block';
-    infoPanel.style.animation='fadeUp 0.3s ease';
-    bpm=song.defaultBpm||80;
-
-    const tsLabel=`${song.timeSig}/8`;
-    const groupStr=song.grouping.join('-');
-
-    infoPanel.appendChild(el('h2',{fontFamily:'Syne,sans-serif',fontWeight:'700',fontSize:'1.2rem',marginBottom:'6px'},[],[`Rytm — ${tsLabel}`]));
-    infoPanel.appendChild(el('p',{fontSize:'0.875rem',color:'#999',marginBottom:'3px'},[],[`Grupowanie: ${groupStr}`]));
-    infoPanel.appendChild(el('p',{fontSize:'0.875rem',color:'#999',marginBottom:'20px'},[],[`Wstęp: ${song.introMeasures} ciche ${song.timeSig===7?'siódemki':'dziewiątki'} · przerwa po każdej zwrotce`]));
-    infoPanel.appendChild(renderBeatRow(song.timeSig,song.grouping,-1,false));
-
-    const tempoDiv=el('div',{marginTop:'24px'});
-    const tempoHeader=el('div',{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'10px'});
-    tempoHeader.appendChild(el('span',{fontSize:'0.85rem',color:'#999'},[],['Tempo']));
-    const bpmLabel=el('span',{fontFamily:'monospace',fontSize:'0.9rem',fontWeight:'600',color:'#555'},[],[`${bpm} BPM`]);
-    tempoHeader.appendChild(bpmLabel);
-    tempoDiv.appendChild(tempoHeader);
-
-    const slider=document.createElement('input');
-    slider.type='range'; slider.min='50'; slider.max='160'; slider.value=String(bpm);
-    Object.assign(slider.style,{WebkitAppearance:'none',appearance:'none',width:'100%',height:'4px',background:'#E8E6E1',borderRadius:'2px',outline:'none'});
-    slider.addEventListener('input',()=>{
-      bpm=Number(slider.value);
-      bpmLabel.textContent=`${bpm} BPM`;
-    });
-    tempoDiv.appendChild(slider);
-    infoPanel.appendChild(tempoDiv);
-  }
-
-  selectEl.addEventListener('change',()=>{
-    selectedId=selectEl.value;
-    selectEl.style.color=selectedId?'#1a1a1a':'#BCBCBC';
-    updateInfoPanel();
-    updateStartBtn();
-  });
-
-  startBtn.addEventListener('click',()=>{
-    const song=selectedId?SONGS[selectedId]:null;
-    if(!song||song.comingSoon) return;
-    onStart({song,settings:{...settings},bpm});
-  });
-
-  return root;
+      {/* Start */}
+      <button
+        disabled={!canStart}
+        onClick={()=>onStart({song,settings,bpm})}
+        style={{
+          width:'100%',padding:'19px',
+          background:canStart?'#1a1a1a':'#E8E6E1',
+          color:canStart?'#fff':'#C0BDB5',
+          borderRadius:'12px',
+          fontSize:'1.05rem',fontWeight:'700',
+          fontFamily:'Syne,sans-serif',letterSpacing:'0.06em',
+          transition:'all 0.2s',
+          cursor:canStart?'pointer':'not-allowed',
+        }}
+      >
+        Start
+      </button>
+    </div>
+  );
 }
 
 /* ─── Playing Screen ────────────────────────────────────────── */
-function PlayingScreen(song, settings, initBpm, onStop, onRestart){
-  const timeline=buildTimeline(song);
+function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
+  const timeline=useMemo(()=>buildTimeline(song),[song]);
 
-  let activeBeat=-1;
-  let currentEntry=timeline[0]||null;
-  let signal=null;
-  let songEnded=false;
-  let isPaused=false;
-  let lastFeedback=null;
-  let feedbackHist=[];
-  let sensitivity=0.04;
-  let micOn=false;
-  let micError=null;
-  let volume=0;
+  const[activeBeat,  setActiveBeat  ]=useState(-1);
+  const[currentEntry,setCurrentEntry]=useState(timeline[0]||null);
+  const[signal,      setSignal      ]=useState(null);
+  const[songEnded,   setSongEnded   ]=useState(false);
+  const[isPaused,    setIsPaused    ]=useState(false);
+  const[lastFeedback,setLastFeedback]=useState(null);
+  const[feedbackHist,setFeedbackHist]=useState([]);
+  const[sensitivity, setSensitivity ]=useState(0.04);
+  const[micOn,       setMicOn       ]=useState(false);
+  const[micError,    setMicError    ]=useState(null);
+  const[volume,      setVolume      ]=useState(0);
 
-  let audioCtx=null;
-  let intervalId=null;
-  let nextT=0;
-  let beatR=0;
-  let measR=0;
-  let playing=false;
-  let isPausedR=false;
-  let bpmR=initBpm;
-  let soundOnR=settings.sound;
-  let expectedEntry=null;
-  let isSilent=true;
-  let lastOnset=0;
-  let sensitivityR=sensitivity;
-  let micStream=null;
-  let analyser=null;
-  let micRaf=null;
-  let feedbackTimer=null;
-  let missedTimer=null;
+  const ctxRef        =useRef(null);
+  const intRef        =useRef(null);
+  const nextT         =useRef(0);
+  const beatR         =useRef(0);
+  const measR         =useRef(0);
+  const playingR      =useRef(false);
+  const isPausedR     =useRef(false);
+  const bpmR          =useRef(initBpm);
+  const soundOnR      =useRef(settings.sound);
+  const timelineR     =useRef(timeline);
+  const timeSigR      =useRef(song.timeSig);
+  const groupingR     =useRef(song.grouping);
+  const expectedEntryR=useRef(null);
+  const isSilentR     =useRef(true);
+  const lastOnsetR    =useRef(0);
+  const sensitivityR  =useRef(sensitivity);
+  const micStreamR    =useRef(null);
+  const analyserR     =useRef(null);
+  const micRafR       =useRef(null);
+  const frameR        =useRef(0);
+  const feedbackTimerR=useRef(null);
+  const missedTimerR  =useRef(null);
 
-  /* ── Build root ── */
-  const root=el('div',{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'20px 20px 28px',background:'#fff'});
+  useEffect(()=>{sensitivityR.current=sensitivity;},[sensitivity]);
 
-  /* Top bar */
-  const topBar=el('div',{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px',gap:'12px',minWidth:'0'});
-  const titleWrap=el('div',{minWidth:'0',flex:'1',overflow:'hidden'});
-  titleWrap.appendChild(el('div',{fontFamily:'DM Sans,sans-serif',fontWeight:'600',fontSize:'0.78rem',color:'#AAA',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},[],['Pomocnik rymiczny']));
-  titleWrap.appendChild(el('div',{fontFamily:'Syne,sans-serif',fontWeight:'700',fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},[],[song.name]));
-  const stopBtn=el('button',{flexShrink:'0',padding:'8px 18px',border:'1.5px solid #E0DDD7',borderRadius:'10px',fontSize:'0.85rem',fontWeight:'600',color:'#666',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',background:'#fff'},[],['Stop']);
-  stopBtn.addEventListener('click',()=>{ stopAll(); onStop(); });
-  topBar.appendChild(titleWrap); topBar.appendChild(stopBtn);
-  root.appendChild(topBar);
 
-  /* Main card */
-  const card=el('div',{background:'#F2F0EC',borderRadius:'20px',padding:'24px 20px 20px',marginBottom:'20px',flex:'1',display:'flex',flexDirection:'column',opacity:'1',transition:'opacity 0.2s'});
-  root.appendChild(card);
 
-  /* Badge */
-  const badgeWrap=el('div',{textAlign:'center',marginBottom:'16px'});
-  const badgeSpan=el('span',{display:'inline-block',padding:'5px 16px',borderRadius:'30px',background:'#C8E8F5',fontSize:'0.72rem',fontWeight:'800',color:'#1D6A8E',letterSpacing:'0.1em',textTransform:'uppercase'},[],['']);
-  badgeWrap.appendChild(badgeSpan);
-  card.appendChild(badgeWrap);
+  /* ── Scheduler ─────────────────────────────────────────────── */
+  const schedule=useCallback(()=>{
+    const ctx=ctxRef.current;
+    if(!ctx||!playingR.current||isPausedR.current) return;
+    const tot=timeSigR.current;
+    const tl =timelineR.current;
 
-  /* Signal */
-  const signalWrap=el('div',{textAlign:'center',minHeight:'28px',marginBottom:'12px',display:'flex',alignItems:'center',justifyContent:'center'});
-  card.appendChild(signalWrap);
+    while(nextT.current<ctx.currentTime+0.1){
+      const bi=beatR.current, mi=measR.current;
 
-  /* Lyrics */
-  const lyricsWrap=el('div',{textAlign:'center',flex:'1',display:'flex',flexDirection:'column',justifyContent:'center',marginBottom:'20px',minHeight:'100px',padding:'0 16px'});
-  if(settings.text) card.appendChild(lyricsWrap);
-
-  /* Beat row container */
-  const beatWrap=el('div',{marginBottom:'16px'});
-  if(settings.visual) card.appendChild(beatWrap);
-
-  /* Feedback slot */
-  const fbSlot=el('div',{height:'36px',marginBottom:'16px',display:'flex',alignItems:'center',justifyContent:'center'});
-  card.appendChild(fbSlot);
-
-  /* Controls */
-  const controls=el('div',{display:'flex',alignItems:'center',justifyContent:'center',gap:'16px'});
-
-  const prevBtn=el('button',{width:'48px',height:'48px',borderRadius:'50%',border:'none',background:'#E5E2DC',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#666',fontSize:'1.1rem',transition:'background 0.15s'},[],['⏮']);
-  prevBtn.title='Wers wstecz';
-  prevBtn.addEventListener('click',()=>skipVerse(-1));
-
-  const playBtn=el('button',{width:'72px',height:'72px',borderRadius:'50%',border:'none',background:'#1a1a1a',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.2)',transition:'transform 0.15s'});
-  playBtn.addEventListener('mouseenter',()=>playBtn.style.transform='scale(1.05)');
-  playBtn.addEventListener('mouseleave',()=>playBtn.style.transform='scale(1)');
-  playBtn.addEventListener('click',togglePause);
-
-  const nextBtn=el('button',{width:'48px',height:'48px',borderRadius:'50%',border:'none',background:'#E5E2DC',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#666',fontSize:'1.1rem',transition:'background 0.15s'},[],['⏭']);
-  nextBtn.title='Wers wprzód';
-  nextBtn.addEventListener('click',()=>skipVerse(1));
-
-  controls.appendChild(prevBtn); controls.appendChild(playBtn); controls.appendChild(nextBtn);
-  card.appendChild(controls);
-
-  /* Mic panel */
-  const micPanel=el('div',{});
-  if(settings.voice) root.appendChild(micPanel);
-
-  /* ── Helpers ── */
-  function fbColor(r){ return {perfect:'#2E9B58',good:'#BF9A20',early:'#C0402A',late:'#C0402A',missed:'#C0402A'}[r]||'#999'; }
-  function fbLabel(r){ return {perfect:'Idealnie!',good:'Dobrze',early:'Za wcześnie',late:'Za późno',missed:'Ups, przegapione wejście'}[r]||''; }
-
-  function phaseTag(){
-    if(!currentEntry) return '';
-    if(currentEntry.type==='intro') return 'Drum solo!';
-    if(currentEntry.type==='pause') return 'Drum solo!';
-    return `Zwrotka ${currentEntry.stanza+1}`;
-  }
-
-  /* ── Render update ── */
-  function render(){
-    /* Paused opacity */
-    card.style.opacity=isPaused?'0.7':'1';
-
-    /* Badge */
-    const tag=phaseTag();
-    if(isPaused||tag!=='Drum solo!'){
-      badgeWrap.style.display='block';
-      badgeSpan.textContent=isPaused?'PAUZA':tag;
-    } else {
-      badgeWrap.style.display='none';
-    }
-
-    /* Signal */
-    signalWrap.innerHTML='';
-    if(!isPaused&&signal==='ready'){
-      signalWrap.appendChild(el('span',{fontSize:'0.82rem',color:'#B0A89E',letterSpacing:'0.08em'},[],['za chwilę…']));
-    } else if(!isPaused&&signal==='go'){
-      const s=el('span',{fontFamily:'Syne,sans-serif',fontWeight:'800',fontSize:'1.4rem',color:'#3B1505',letterSpacing:'0.04em',animation:'pulseRing 0.5s ease',display:'inline-block'},[],['TERAZ!']);
-      signalWrap.appendChild(s);
-    }
-
-    /* Play button icon */
-    playBtn.innerHTML='';
-    if(isPaused){
-      playBtn.innerHTML=`<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
-    } else {
-      playBtn.innerHTML=`<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-    }
-
-    /* Beat row */
-    if(settings.visual){
-      beatWrap.innerHTML='';
-      beatWrap.appendChild(renderBeatRow(song.timeSig, song.grouping, isPaused?-1:activeBeat, tag==='Drum solo!'&&!isPaused));
-    }
-
-    /* Feedback */
-    fbSlot.innerHTML='';
-    if(lastFeedback){
-      const fbDiv=el('div',{display:'flex',alignItems:'center',gap:'10px',animation:'popIn 0.18s ease'});
-      fbDiv.appendChild(el('span',{fontWeight:'700',fontSize:'0.9rem',color:fbColor(lastFeedback.res)},[],[fbLabel(lastFeedback.res)]));
-      if(lastFeedback.ms!==null){
-        fbDiv.appendChild(el('span',{fontFamily:'monospace',fontSize:'0.72rem',color:'#B0A89E'},[],[`${lastFeedback.ms>0?'+':''}${lastFeedback.ms} ms`]));
-      }
-      const dots=el('div',{display:'flex',gap:'3px',alignItems:'center'});
-      feedbackHist.slice(0,6).forEach(h=>{
-        dots.appendChild(el('div',{width:'6px',height:'6px',borderRadius:'50%',background:fbColor(h.res),opacity:'0.7'}));
-      });
-      fbDiv.appendChild(dots);
-      fbSlot.appendChild(fbDiv);
-    }
-
-    /* Lyrics */
-    if(settings.text) renderLyrics();
-
-    /* Mic panel */
-    renderMicPanel();
-  }
-
-  function renderLyrics(){
-    lyricsWrap.innerHTML='';
-    const tag=phaseTag();
-    const lyricsInfo=getLyricsInfo();
-
-    if(lyricsInfo){
-      /* Current line */
-      const mainLine=el('p',{margin:'0 0 16px',lineHeight:'2',fontSize:'24px',padding:'6px 0',borderRadius:'10px',whiteSpace:'nowrap',overflow:'hidden',background:signal==='go'?'#DEEEF9':'transparent',transition:'background 0.3s',animation:'lyricSlide 0.2s ease'});
-      lyricsInfo.segments.forEach((seg,i)=>{
-        if(i>0) mainLine.appendChild(document.createTextNode(' '));
-        const isCur=i===lyricsInfo.currentSeg;
-        const words=seg.trim().split(/\s+/);
-        const first=words[0]; const rest=words.slice(1).join(' ');
-        const wrap=el('span',{display:'inline-block',borderBottom:isCur?'2.5px solid #1D6A8E':'2.5px solid transparent',paddingBottom:'1px',transition:'border-color 0.15s'});
-        const firstLetterSpan=el('span',{background:'#C8E8F5',borderRadius:'2px',padding:'0 2px',fontWeight:'700'},[],[first[0]]);
-        const restLettersSpan=el('span',{color:'#1a1a1a'},[],[first.slice(1)]);
-        wrap.appendChild(firstLetterSpan); wrap.appendChild(restLettersSpan);
-        if(rest) wrap.appendChild(el('span',{color:'#1a1a1a'},[],[' '+rest]));
-        mainLine.appendChild(wrap);
-      });
-      lyricsWrap.appendChild(mainLine);
-      autoSizeLyric(mainLine);
-
-      /* Next line preview */
-      if(lyricsInfo.nextSegs){
-        const nextLine=el('p',{margin:'0',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'});
-        lyricsInfo.nextSegs.forEach((seg,i)=>{
-          if(i>0) nextLine.appendChild(document.createTextNode(' '));
-          const words=seg.trim().split(/\s+/);
-          const first=words[0]; const rest=words.slice(1).join(' ');
-          const fl=el('span',{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'},[],[first[0]]);
-          const rl=el('span',{color:'#BDBAB5'},[],[first.slice(1)]);
-          nextLine.appendChild(fl); nextLine.appendChild(rl);
-          if(rest) nextLine.appendChild(el('span',{color:'#C8C4BF'},[],[' '+rest]));
-        });
-        lyricsWrap.appendChild(nextLine);
-      }
-      if(lyricsInfo.nextIsDrumSolo){
-        lyricsWrap.appendChild(el('p',{margin:'0',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8',fontStyle:'italic'},[],['Drum solo!']));
-      }
-    } else {
-      /* Drum solo */
-      const mainLine=el('p',{margin:'0 0 16px',lineHeight:'2',fontSize:'clamp(1.15rem,5.5vw,1.55rem)',padding:'6px 0',whiteSpace:'nowrap',overflow:'hidden',animation:'lyricSlide 0.2s ease'});
-      mainLine.appendChild(el('span',{display:'inline-block',color:'#1a1a1a',borderBottom:'2.5px solid #1D6A8E',paddingBottom:'1px'},[],['Drum solo!']));
-      lyricsWrap.appendChild(mainLine);
-
-      /* Preview next stanza */
-      const previewSegs=getPreviewSegs();
-      if(previewSegs.length>0){
-        const nextLine=el('p',{margin:'0',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'});
-        previewSegs.forEach((seg,i)=>{
-          if(i>0) nextLine.appendChild(document.createTextNode(' '));
-          const words=seg.trim().split(/\s+/);
-          const first=words[0]; const rest=words.slice(1).join(' ');
-          const fl=el('span',{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'},[],[first[0]]);
-          const rl=el('span',{color:'#BDBAB5'},[],[first.slice(1)]);
-          nextLine.appendChild(fl); nextLine.appendChild(rl);
-          if(rest) nextLine.appendChild(el('span',{color:'#C8C4BF'},[],[' '+rest]));
-        });
-        lyricsWrap.appendChild(nextLine);
-      }
-    }
-  }
-
-  function autoSizeLyric(el){
-    const MAX=24, MIN=10;
-    el.style.fontSize=MAX+'px';
-    let size=MAX;
-    // defer until rendered
-    requestAnimationFrame(()=>{
-      while(el.scrollWidth>el.offsetWidth+1&&size>MIN){
-        size-=0.5; el.style.fontSize=size+'px';
-      }
-    });
-  }
-
-  function getLyricsInfo(){
-    if(!currentEntry||currentEntry.type!=='verse') return null;
-    const{segments,currentSeg,stanza:si,line:li}=currentEntry;
-    const st=song.stanzas;
-    const isLastLineOfStanza=li===st[si].length-1;
-    let nextSegs=null, nextIsDrumSolo=false;
-    if(isLastLineOfStanza&&song.pauseMeasures>0){ nextIsDrumSolo=true; }
-    else if(li+1<st[si].length){ nextSegs=st[si][li+1]; }
-    else if(si+1<st.length){ nextSegs=st[si+1][0]; }
-    return{segments,currentSeg,nextSegs,nextIsDrumSolo};
-  }
-
-  function getPreviewSegs(){
-    if(!currentEntry) return song.stanzas?.[0]?.[0]||[];
-    if(currentEntry.type==='pause'){
-      const nextSi=currentEntry.stanza+1;
-      return song.stanzas?.[nextSi]?.[0]||song.stanzas?.[0]?.[0]||[];
-    }
-    return song.stanzas?.[0]?.[0]||[];
-  }
-
-  function renderMicPanel(){
-    micPanel.innerHTML='';
-    if(!settings.voice) return;
-    if(micError){
-      micPanel.appendChild(el('div',{padding:'10px 14px',marginBottom:'10px',background:'#FEF5F4',border:'1px solid #FAD3CE',borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5'},[],[`⚠️ ${micError}`]));
-    }
-    if(micOn){
-      const micStatus=el('div',{marginBottom:'8px'});
-      const micHeader=el('div',{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'});
-      micHeader.appendChild(el('div',{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}));
-      micHeader.appendChild(el('span',{fontSize:'0.72rem',color:'#AAA'},[],['Mikrofon aktywny']));
-      micStatus.appendChild(micHeader);
-      const volBar=el('div',{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'});
-      const volFill=el('div',{height:'100%',borderRadius:'2px',width:`${volume*100}%`,background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',transition:'width 0.05s,background 0.15s'});
-      volBar.appendChild(volFill); micStatus.appendChild(volBar);
-      micPanel.appendChild(micStatus);
-
-      const sensDiv=el('div',{marginBottom:'8px'});
-      const sensHeader=el('div',{display:'flex',justifyContent:'space-between',marginBottom:'4px'});
-      sensHeader.appendChild(el('span',{fontSize:'0.68rem',color:'#CCC'},[],['Czułość mikrofonu']));
-      const sensVal=el('span',{fontFamily:'monospace',fontSize:'0.68rem',color:'#CCC'},[],[String(Math.round(sensitivityR*1000))]);
-      sensHeader.appendChild(sensVal);
-      sensDiv.appendChild(sensHeader);
-      const sensSlider=document.createElement('input');
-      sensSlider.type='range'; sensSlider.min='5'; sensSlider.max='80'; sensSlider.value=String(Math.round(sensitivityR*1000));
-      Object.assign(sensSlider.style,{WebkitAppearance:'none',appearance:'none',width:'100%',height:'4px',background:'#E8E6E1',borderRadius:'2px',outline:'none'});
-      sensSlider.addEventListener('input',()=>{ sensitivityR=Number(sensSlider.value)/1000; sensVal.textContent=sensSlider.value; });
-      sensDiv.appendChild(sensSlider);
-      micPanel.appendChild(sensDiv);
-    }
-  }
-
-  /* ── Show end screen ── */
-  function showEndScreen(){
-    root.innerHTML='';
-    const endDiv=el('div',{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 28px',textAlign:'center'});
-    endDiv.appendChild(el('div',{fontSize:'3rem',marginBottom:'20px',lineHeight:'1'},[],['🎵']));
-    endDiv.appendChild(el('h2',{fontFamily:'Syne,sans-serif',fontWeight:'800',fontSize:'2.2rem',color:'#3B1505',marginBottom:'8px',letterSpacing:'-0.02em'},[],['Koniec!']));
-    endDiv.appendChild(el('p',{color:'#BBB',fontSize:'0.875rem',marginBottom:'36px'},[],[song.name]));
-    const btnGroup=el('div',{display:'flex',flexDirection:'column',gap:'12px',width:'100%',maxWidth:'280px'});
-    const repeatBtn=el('button',{padding:'17px',background:'#1a1a1a',color:'#fff',borderRadius:'12px',fontSize:'1rem',fontWeight:'700',fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer'},[],['Powtórz piosenkę']);
-    repeatBtn.addEventListener('click',()=>{ stopAll(); onRestart(); });
-    const backBtn=el('button',{padding:'17px',background:'transparent',color:'#888',border:'1.5px solid #E0DDD7',borderRadius:'12px',fontSize:'1rem',fontWeight:'600',fontFamily:'DM Sans,sans-serif',cursor:'pointer'},[],['Powrót do menu']);
-    backBtn.addEventListener('click',()=>{ stopAll(); onStop(); });
-    btnGroup.appendChild(repeatBtn); btnGroup.appendChild(backBtn);
-    endDiv.appendChild(btnGroup);
-    root.appendChild(endDiv);
-  }
-
-  /* ── Scheduler ── */
-  function schedule(){
-    const ctx=audioCtx;
-    if(!ctx||!playing||isPausedR) return;
-    const tot=song.timeSig;
-    const tl=timeline;
-    while(nextT<ctx.currentTime+0.1){
-      const bi=beatR, mi=measR;
       if(mi>=tl.length){
-        setTimeout(()=>{ playing=false; showEndScreen(); },0);
+        setTimeout(()=>{playingR.current=false;setSongEnded(true);},0);
         return;
       }
+
       const entry=tl[mi];
-      const grp=song.grouping;
-      const gs=getGroupStarts(grp);
-      const t=nextT;
-      const isGS=gs.has(bi);
-      const nextEntry=tl[mi+1];
-      const isReady=bi===tot-1&&nextEntry?.expectEntry===true;
-      const isVerseStart=bi===0&&entry.expectEntry;
+      const grp  =groupingR.current;
+      const gs   =getGroupStarts(grp);
+      const t    =nextT.current;
+
+      const isGS       =gs.has(bi);
+      const nextEntry  =tl[mi+1];
+      const isReady    =bi===tot-1 && nextEntry?.expectEntry===true;
+      const isVerseStart=bi===0 && entry.expectEntry;
+
+      // Accent on beats 1, 3, 5 (index 0, 2, 4)
       const type=[0,2,4].includes(bi)?'accent':'soft';
-      if(soundOnR) playClick(ctx,type,t);
+
+      if(soundOnR.current) playClick(ctx,type,t);
       if(isVerseStart){
-        expectedEntry=t;
-        const windowMs=(30/bpmR)*2.5*1000;
+        expectedEntryR.current=t;
+        // Window = 2.5 eighth notes after expected time
+        const windowMs=(30/bpmR.current)*2.5*1000;
         const entryDelay=Math.max(0,(t-ctx.currentTime)*1000)+windowMs;
-        clearTimeout(missedTimer);
-        missedTimer=setTimeout(()=>{
-          if(expectedEntry!==null&&playing&&!isPausedR){
-            expectedEntry=null;
+        clearTimeout(missedTimerR.current);
+        missedTimerR.current=setTimeout(()=>{
+          if(expectedEntryR.current!==null&&playingR.current&&!isPausedR.current){
+            // Entry window passed with no onset detected
+            expectedEntryR.current=null;
             const fb={res:'missed',ms:null,id:Date.now()};
-            lastFeedback=fb;
-            feedbackHist=[fb,...feedbackHist].slice(0,8);
-            clearTimeout(feedbackTimer);
-            feedbackTimer=setTimeout(()=>{lastFeedback=null;render();},2500);
-            render();
+            setLastFeedback(fb);
+            setFeedbackHist(h=>[fb,...h].slice(0,8));
+            // auto-hide
+            clearTimeout(feedbackTimerR.current);
+            feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
           }
         },entryDelay);
       }
+
       const delay=Math.max(0,(t-ctx.currentTime)*1000);
       setTimeout(()=>{
-        if(!playing) return;
-        activeBeat=bi;
+        if(!playingR.current) return;
+        setActiveBeat(bi);
         if(bi===0){
-          currentEntry={...entry};
-          if(entry.expectEntry) { signal='go'; setTimeout(()=>{signal=null;render();},950); }
-          else if(entry.type!=='verse') signal=null;
+          setCurrentEntry({...entry});
+          if(entry.expectEntry) setSignal('go');
+          else if(entry.type!=='verse') setSignal(null);
         }
-        if(isReady) signal='ready';
-        render();
+        if(isReady) setSignal('ready');
       },delay);
-      nextT+=30/bpmR;
-      beatR=(bi+1)%tot;
-      if(beatR===0) measR+=1;
-    }
-  }
 
-  /* ── Pause ── */
-  function togglePause(){
-    if(!isPausedR){
-      isPausedR=true; isPaused=true;
-      activeBeat=-1; signal=null;
+      nextT.current+=30/bpmR.current;
+      beatR.current=(bi+1)%tot;
+      if(beatR.current===0) measR.current+=1;
+    }
+  },[]);
+
+  /* ── Start / stop ──────────────────────────────────────────── */
+  useEffect(()=>{
+    ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
+    playingR.current=true;
+    beatR.current=0; measR.current=0;
+    nextT.current=ctxRef.current.currentTime+0.1;
+    intRef.current=setInterval(schedule,20);
+    if(settings.voice) enableMic();
+    return()=>{
+      playingR.current=false;
+      clearInterval(intRef.current);
+      stopMic();
+    };
+  },[schedule]);
+
+  useEffect(()=>{
+    if(signal==='go'){
+      const t=setTimeout(()=>setSignal(null),950);
+      return()=>clearTimeout(t);
+    }
+  },[signal]);
+
+  /* ── Pause / resume ────────────────────────────────────────── */
+  const togglePause=useCallback(()=>{
+    if(!isPausedR.current){
+      isPausedR.current=true;
+      setIsPaused(true);
+      setActiveBeat(-1);
+      setSignal(null);
     } else {
-      isPausedR=false; isPaused=false;
-      nextT=audioCtx.currentTime+0.12;
-      beatR=0;
+      isPausedR.current=false;
+      setIsPaused(false);
+      nextT.current=ctxRef.current.currentTime+0.12;
+      beatR.current=0;
     }
-    render();
-  }
+  },[]);
 
-  /* ── Skip verse ── */
-  function skipVerse(dir){
-    const tl=timeline;
-    const cur=measR;
+  /* ── Skip verse ────────────────────────────────────────────── */
+  const skipVerse=useCallback((dir)=>{
+    const tl=timelineR.current;
+    const cur=measR.current;
     let target=-1;
     if(dir>0){
-      for(let i=cur+1;i<tl.length;i++){ if(tl[i].expectEntry){target=i;break;} }
+      for(let i=cur+1;i<tl.length;i++){
+        if(tl[i].expectEntry){target=i;break;}
+      }
     } else {
+      // Go to start of current verse line, or previous one
       const curLineStart=tl.slice(0,cur+1).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
-      const prevStart=tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
-      target=cur===curLineStart?prevStart:curLineStart;
+      const prevStart  =tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
+      target = cur===curLineStart ? prevStart : curLineStart;
     }
     if(target<0) return;
-    measR=target; beatR=0; expectedEntry=null;
-    currentEntry={...tl[target]}; activeBeat=-1; signal=null;
-    if(!isPausedR) nextT=audioCtx.currentTime+0.12;
-    render();
-  }
+    measR.current=target;
+    beatR.current=0;
+    expectedEntryR.current=null;
+    setCurrentEntry({...tl[target]});
+    setActiveBeat(-1);
+    setSignal(null);
+    if(!isPausedR.current){
+      nextT.current=ctxRef.current.currentTime+0.12;
+    }
+  },[]);
 
-  /* ── Mic ── */
-  function startMicLoop(){
-    if(!analyser||!audioCtx) return;
+  /* ── Mic ───────────────────────────────────────────────────── */
+  const startMicLoop=useCallback(()=>{
+    const analyser=analyserR.current,ctx=ctxRef.current;
+    if(!analyser||!ctx) return;
     const bbuf=new Uint8Array(analyser.fftSize);
-    function loop(){
-      micRaf=requestAnimationFrame(loop);
+    const loop=()=>{
+      micRafR.current=requestAnimationFrame(loop);
+      frameR.current++;
       analyser.getByteTimeDomainData(bbuf);
       const rms=computeRMS(bbuf);
-      volume=Math.min(rms*6,1);
-      const thr=sensitivityR, now=audioCtx.currentTime;
-      if(isSilent&&rms>thr&&now-lastOnset>0.4){
-        isSilent=false; lastOnset=now;
-        if(expectedEntry!==null&&playing&&!isPausedR){
-          const diff=now-expectedEntry;
-          const bd=30/bpmR;
+      setVolume(Math.min(rms*6,1));
+      const thr=sensitivityR.current,now=ctx.currentTime;
+      if(isSilentR.current&&rms>thr&&now-lastOnsetR.current>0.4){
+        isSilentR.current=false; lastOnsetR.current=now;
+        if(expectedEntryR.current!==null&&playingR.current&&!isPausedR.current){
+          const diff=now-expectedEntryR.current;
+          const bd=30/bpmR.current;
           if(Math.abs(diff)<=bd*2.5){
             const ab=Math.abs(diff);
             const res=ab<bd*0.6?'perfect':ab<bd*1.4?'good':diff<0?'early':'late';
             const fb={res,ms:Math.round(diff*1000),id:Date.now()};
-            clearTimeout(missedTimer);
-            clearTimeout(feedbackTimer);
-            lastFeedback=fb;
-            feedbackHist=[fb,...feedbackHist].slice(0,8);
-            expectedEntry=null;
-            feedbackTimer=setTimeout(()=>{lastFeedback=null;render();},2500);
-            render();
+            clearTimeout(missedTimerR.current);
+            clearTimeout(feedbackTimerR.current);
+            setLastFeedback(fb);
+            setFeedbackHist(h=>[fb,...h].slice(0,8));
+            expectedEntryR.current=null;
+            feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
           }
         }
-      } else if(!isSilent&&rms<thr*0.45){ isSilent=true; }
-      // update volume bar only if panel is visible
-      if(micOn) renderMicPanel();
-    }
+      }else if(!isSilentR.current&&rms<thr*0.45){
+        isSilentR.current=true;
+      }
+    };
     loop();
-  }
+  },[]);
 
-  async function enableMic(){
+  const enableMic=async()=>{
     try{
       if(!navigator.mediaDevices?.getUserMedia) throw{name:'NotSupportedError'};
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const src=audioCtx.createMediaStreamSource(stream);
-      const an=audioCtx.createAnalyser();
-      an.fftSize=2048; src.connect(an);
-      micStream=stream; analyser=an;
-      micOn=true; startMicLoop(); render();
+      const src=ctxRef.current.createMediaStreamSource(stream);
+      const analyser=ctxRef.current.createAnalyser();
+      analyser.fftSize=2048; src.connect(analyser);
+      micStreamR.current=stream; analyserR.current=analyser;
+      setMicOn(true); startMicLoop();
     }catch(err){
       const msgs={
         NotAllowedError:'Dostęp zablokowany — kliknij 🔒 obok adresu i zezwól na mikrofon.',
@@ -799,64 +605,471 @@ function PlayingScreen(song, settings, initBpm, onStop, onRestart){
         SecurityError:'Strona musi działać przez HTTPS.',
         NotSupportedError:'Przeglądarka nie obsługuje mikrofonu — użyj Chrome/Firefox.',
       };
-      micError=msgs[err.name]||`Błąd: ${err.name}`;
-      render();
+      setMicError(msgs[err.name]||`Błąd: ${err.name}`);
     }
-  }
+  };
 
-  function stopMic(){
-    cancelAnimationFrame(micRaf);
-    micStream?.getTracks().forEach(t=>t.stop());
-    micStream=null; analyser=null;
-  }
+  const stopMic=()=>{
+    cancelAnimationFrame(micRafR.current);
+    micStreamR.current?.getTracks().forEach(t=>t.stop());
+    micStreamR.current=null; analyserR.current=null;
+  };
 
-  function stopAll(){
-    playing=false;
-    clearInterval(intervalId);
-    stopMic();
-  }
+  /* ── Derived ───────────────────────────────────────────────── */
+  const fbColor=r=>({perfect:'#2E9B58',good:'#BF9A20',early:'#C0402A',late:'#C0402A',missed:'#C0402A'})[r]||'#999';
+  const fbLabel=r=>({perfect:'Idealnie!',good:'Dobrze',early:'Za wcześnie',late:'Za późno',missed:'Ups, przegapione wejście'})[r]||'';
 
-  /* ── Start ── */
-  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  playing=true; beatR=0; measR=0;
-  nextT=audioCtx.currentTime+0.1;
-  intervalId=setInterval(schedule,20);
-  if(settings.voice) enableMic();
+  /* Lyrics display info */
+  const lyricsInfo=useMemo(()=>{
+    if(!currentEntry||currentEntry.type!=='verse') return null;
+    const{segments,currentSeg,stanza:si,line:li}=currentEntry;
+    const st=song.stanzas;
+    const isLastLineOfStanza=li===st[si].length-1;
+    let nextSegs=null;
+    let nextIsDrumSolo=false;
+    if(isLastLineOfStanza&&song.pauseMeasures>0){
+      nextIsDrumSolo=true;
+    } else if(li+1<st[si].length){
+      nextSegs=st[si][li+1];
+    } else if(si+1<st.length){
+      nextSegs=st[si+1][0];
+    }
+    return{segments,currentSeg,nextSegs,nextIsDrumSolo};
+  },[currentEntry,song.stanzas,song.pauseMeasures]);
 
-  render();
-  return root;
+  /* Preview during intro/pause: first line of first stanza */
+  const previewSegs=useMemo(()=>{
+    if(!currentEntry) return song.stanzas?.[0]?.[0]||[];
+    if(currentEntry.type==='pause'){
+      const nextSi=currentEntry.stanza+1;
+      return song.stanzas?.[nextSi]?.[0]||song.stanzas?.[0]?.[0]||[];
+    }
+    // intro — show first stanza
+    return song.stanzas?.[0]?.[0]||[];
+  },[currentEntry,song.stanzas]);
+
+  /* ── Auto-size lyric line to always fit one row ── */
+  const lyricRef=useRef(null);
+  const lyricKey=lyricsInfo?lyricsInfo.segments.join('|'):'drum';
+  useLayoutEffect(()=>{
+    const el=lyricRef.current;
+    if(!el) return;
+    const MAX=24, MIN=10;
+    el.style.fontSize=MAX+'px';
+    let size=MAX;
+    while(el.scrollWidth>el.offsetWidth+1&&size>MIN){
+      size-=0.5;
+      el.style.fontSize=size+'px';
+    }
+  },[lyricKey]);
+
+  const phaseTag=useMemo(()=>{
+    if(!currentEntry) return '';
+    if(currentEntry.type==='intro') return 'Drum solo!';
+    if(currentEntry.type==='pause') return 'Drum solo!';
+    return`Zwrotka ${currentEntry.stanza+1}`;
+  },[currentEntry]);
+
+  /* ── End screen ────────────────────────────────────────────── */
+  if(songEnded) return(
+    <div style={{
+      minHeight:'100vh',display:'flex',flexDirection:'column',
+      alignItems:'center',justifyContent:'center',
+      padding:'40px 28px',textAlign:'center',
+    }}>
+      <div style={{fontSize:'3rem',marginBottom:'20px',lineHeight:1}}>🎵</div>
+      <h2 style={{
+        fontFamily:'Syne,sans-serif',fontWeight:800,
+        fontSize:'2.2rem',color:'#3B1505',marginBottom:'8px',letterSpacing:'-0.02em',
+      }}>Koniec!</h2>
+      <p style={{color:'#BBB',fontSize:'0.875rem',marginBottom:'36px'}}>
+        {song.name}
+      </p>
+      <div style={{display:'flex',flexDirection:'column',gap:'12px',width:'100%',maxWidth:'280px'}}>
+        <button
+          onClick={onRestart}
+          style={{
+            padding:'17px',background:'#1a1a1a',color:'#fff',
+            borderRadius:'12px',fontSize:'1rem',fontWeight:'700',
+            fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer',
+          }}
+        >
+          Powtórz piosenkę
+        </button>
+        <button
+          onClick={onStop}
+          style={{
+            padding:'17px',background:'transparent',color:'#888',
+            border:'1.5px solid #E0DDD7',
+            borderRadius:'12px',fontSize:'1rem',fontWeight:'600',
+            fontFamily:'DM Sans,sans-serif',cursor:'pointer',
+          }}
+        >
+          Powrót do menu
+        </button>
+      </div>
+    </div>
+  );
+
+  /* ── Playing UI ────────────────────────────────────────────── */
+  const badgeBg   = phaseTag==='Drum solo!'?'#C8E8F5':'#C8E8F5';
+  const badgeColor= phaseTag==='Drum solo!'?'#1D6A8E':'#1D6A8E';
+
+  return(
+    <div style={{
+      minHeight:'100vh',display:'flex',flexDirection:'column',
+      padding:'20px 20px 28px',background:'#fff',
+    }}>
+
+      {/* ── Top bar ── */}
+      <div style={{
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        marginBottom:'20px',gap:'12px',minWidth:0,
+      }}>
+        <div style={{minWidth:0,flex:1,overflow:'hidden'}}>
+          <div style={{
+            fontFamily:'DM Sans,sans-serif',fontWeight:'600',
+            fontSize:'0.78rem',color:'#AAA',
+            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+          }}>Pomocnik rymiczny</div>
+          <div style={{
+            fontFamily:'Syne,sans-serif',fontWeight:700,
+            fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',
+            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+          }}>{song.name}</div>
+        </div>
+        <button onClick={onStop} style={{
+          flexShrink:0,padding:'8px 18px',
+          border:'1.5px solid #E0DDD7',borderRadius:'10px',
+          fontSize:'0.85rem',fontWeight:'600',color:'#666',
+          fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',
+          background:'#fff',
+        }}>Stop</button>
+      </div>
+
+      {/* ── Main card ── */}
+      <div style={{
+        background:'#F2F0EC',borderRadius:'20px',
+        padding:'24px 20px 20px',
+        marginBottom:'20px',
+        flex:1,display:'flex',flexDirection:'column',
+        opacity:isPaused?0.7:1,transition:'opacity 0.2s',
+      }}>
+
+        {/* Badge — hidden during drum solo */}
+        {(isPaused||phaseTag!=='Drum solo!')&&(
+          <div style={{textAlign:'center',marginBottom:'16px'}}>
+            <span style={{
+              display:'inline-block',padding:'5px 16px',borderRadius:'30px',
+              background:'#C8E8F5',
+              fontSize:'0.72rem',fontWeight:'800',
+              color:'#1D6A8E',
+              letterSpacing:'0.1em',textTransform:'uppercase',
+            }}>
+              {isPaused?'PAUZA':phaseTag}
+            </span>
+          </div>
+        )}
+        {/* Spacer to keep layout stable when badge is hidden */}
+        {!isPaused&&phaseTag==='Drum solo!'&&<div style={{marginBottom:'16px'}}/>}
+
+        {/* Signal */}
+        <div style={{
+          textAlign:'center',minHeight:'28px',marginBottom:'12px',
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          {!isPaused&&signal==='ready'&&(
+            <span style={{fontSize:'0.82rem',color:'#B0A89E',letterSpacing:'0.08em'}}>za chwilę…</span>
+          )}
+          {!isPaused&&signal==='go'&&(
+            <span style={{
+              fontFamily:'Syne,sans-serif',fontWeight:800,
+              fontSize:'1.4rem',color:'#3B1505',letterSpacing:'0.04em',
+              animation:'pulseRing 0.5s ease',display:'inline-block',
+            }}>TERAZ!</span>
+          )}
+        </div>
+
+        {/* Lyrics */}
+        {settings.text&&(
+          <div style={{
+            textAlign:'center',
+            flex:1,display:'flex',flexDirection:'column',
+            justifyContent:'center',marginBottom:'20px',minHeight:'100px',
+            padding:'0 16px',
+          }}>
+            {lyricsInfo?(
+              <>
+                {/* Current line */}
+                <p ref={lyricRef} style={{
+                  margin:'0 0 16px',lineHeight:'2',
+                  fontSize:'clamp(1.15rem,5.5vw,1.55rem)',
+                  padding:'6px 0',borderRadius:'10px',
+                  whiteSpace:'nowrap',overflow:'hidden',
+                  background:signal==='go'?'#DEEEF9':'transparent',
+                  transition:'background 0.3s',
+                  animation:'lyricSlide 0.2s ease',
+                }}>
+                  {lyricsInfo.segments.map((seg,i)=>{
+                    const words=seg.trim().split(/\s+/);
+                    const first=words[0];
+                    const rest=words.slice(1).join(' ');
+                    const isCur=i===lyricsInfo.currentSeg;
+                    return(
+                      <React.Fragment key={i}>
+                        {i>0&&' '}
+                        {/* Wrap segment in inline-block with border-bottom instead of text-decoration */}
+                        <span style={{
+                          display:'inline-block',
+                          borderBottom: isCur?'2.5px solid #1D6A8E':'2.5px solid transparent',
+                          paddingBottom:'1px',
+                          transition:'border-color 0.15s',
+                        }}>
+                          <span style={{
+                              background:'#C8E8F5',
+                              borderRadius:'2px',
+                              padding:'0 2px',
+                              fontWeight:'700',
+                            }}>{first[0]}</span><span style={{color:'#1a1a1a'}}>{first.slice(1)}</span>
+                          {rest&&<span style={{color:'#1a1a1a'}}>{' '+rest}</span>}
+                        </span>
+                      </React.Fragment>
+                    );
+                  })}
+                </p>
+                {/* Next line preview */}
+                {lyricsInfo.nextSegs&&(
+                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
+                    {lyricsInfo.nextSegs.map((seg,i)=>{
+                      const words=seg.trim().split(/\s+/);
+                      const first=words[0];
+                      const rest=words.slice(1).join(' ');
+                      return(
+                        <React.Fragment key={i}>
+                          {i>0&&' '}
+                          <span style={{
+                              background:'#E8F5FB',
+                              borderRadius:'2px',
+                              padding:'0 2px',
+                              color:'#A8A4A0',
+                              fontWeight:'700',
+                            }}>{first[0]}</span><span style={{color:'#BDBAB5'}}>{first.slice(1)}</span>
+                          {rest&&<span style={{color:'#C8C4BF'}}>{' '+rest}</span>}
+                        </React.Fragment>
+                      );
+                    })}
+                  </p>
+                )}
+                {/* Drum solo coming up */}
+                {lyricsInfo.nextIsDrumSolo&&(
+                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8',fontStyle:'italic'}}>
+                    Drum solo!
+                  </p>
+                )}
+              </>
+            ):(
+              <>
+                {/* Drum solo — main text with underline like active siódemka */}
+                <p ref={lyricRef} style={{
+                  margin:'0 0 16px',lineHeight:'2',
+                  fontSize:'clamp(1.15rem,5.5vw,1.55rem)',
+                  padding:'6px 0',whiteSpace:'nowrap',overflow:'hidden',
+                  animation:'lyricSlide 0.2s ease',
+                }}>
+                  <span style={{
+                    display:'inline-block',
+                    color:'#1a1a1a',
+                    borderBottom:'2.5px solid #1D6A8E',
+                    paddingBottom:'1px',
+                  }}>Drum solo!</span>
+                </p>
+                {/* Next stanza first line as preview */}
+                {previewSegs.length>0&&(
+                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
+                    {previewSegs.map((seg,i)=>{
+                      const words=seg.trim().split(/\s+/);
+                      const first=words[0];
+                      const rest=words.slice(1).join(' ');
+                      return(
+                        <React.Fragment key={i}>
+                          {i>0&&' '}
+                          <span style={{
+                            background:'#E8F5FB',
+                            borderRadius:'2px',
+                            padding:'0 2px',
+                            color:'#A8A4A0',
+                            fontWeight:'700',
+                          }}>{first[0]}</span><span style={{color:'#BDBAB5'}}>{first.slice(1)}</span>
+                          {rest&&<span style={{color:'#C8C4BF'}}>{' '+rest}</span>}
+                        </React.Fragment>
+                      );
+                    })}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        {!settings.text&&<div style={{flex:1}}/>}
+
+        {/* Beat row */}
+        {settings.visual&&(
+          <div style={{marginBottom:'16px'}}>
+            <BeatRow
+              timeSig={song.timeSig}
+              grouping={song.grouping}
+              activeBeat={isPaused?-1:activeBeat}
+              noAccent={phaseTag==='Drum solo!'&&!isPaused}
+            />
+          </div>
+        )}
+
+        {/* Feedback — fixed height slot so controls don't jump */}
+        <div style={{
+          height:'36px',marginBottom:'16px',
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          {lastFeedback&&(
+            <div key={lastFeedback.id} style={{
+              display:'flex',alignItems:'center',gap:'10px',
+              animation:'popIn 0.18s ease',
+            }}>
+              <span style={{
+                fontWeight:'700',fontSize:'0.9rem',
+                color:fbColor(lastFeedback.res),
+              }}>
+                {fbLabel(lastFeedback.res)}
+              </span>
+              {lastFeedback.ms!==null&&(
+                <span style={{fontFamily:'monospace',fontSize:'0.72rem',color:'#B0A89E'}}>
+                  {lastFeedback.ms>0?'+':''}{lastFeedback.ms} ms
+                </span>
+              )}
+              <div style={{display:'flex',gap:'3px',alignItems:'center'}}>
+                {feedbackHist.slice(0,6).map(h=>(
+                  <div key={h.id} style={{
+                    width:'6px',height:'6px',borderRadius:'50%',
+                    background:fbColor(h.res),opacity:0.7,
+                  }}/>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Player controls */}
+        <div style={{
+          display:'flex',alignItems:'center',justifyContent:'center',
+          gap:'16px',
+        }}>
+          <button onClick={()=>skipVerse(-1)} title="Wers wstecz" style={{
+            width:'48px',height:'48px',borderRadius:'50%',border:'none',
+            background:'#E5E2DC',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            color:'#666',fontSize:'1.1rem',
+            transition:'background 0.15s',
+          }}>⏮</button>
+
+          <button onClick={togglePause} style={{
+            width:'72px',height:'72px',borderRadius:'50%',border:'none',
+            background:'#1a1a1a',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            boxShadow:'0 4px 16px rgba(0,0,0,0.2)',
+            transition:'transform 0.15s',
+          }}
+            onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
+            onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+          >
+            {isPaused?(
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            ):(
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            )}
+          </button>
+
+          <button onClick={()=>skipVerse(1)} title="Wers wprzód" style={{
+            width:'48px',height:'48px',borderRadius:'50%',border:'none',
+            background:'#E5E2DC',cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            color:'#666',fontSize:'1.1rem',
+            transition:'background 0.15s',
+          }}>⏭</button>
+        </div>
+      </div>
+
+      {/* ── Mic panel — outside card ── */}
+      {settings.voice&&(
+        <div>
+          {micError&&(
+            <div style={{
+              padding:'10px 14px',marginBottom:'10px',
+              background:'#FEF5F4',border:'1px solid #FAD3CE',
+              borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5',
+            }}>⚠️ {micError}</div>
+          )}
+          {micOn&&(
+            <div style={{marginBottom:'8px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'}}>
+                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}}/>
+                <span style={{fontSize:'0.72rem',color:'#AAA'}}>Mikrofon aktywny</span>
+              </div>
+              <div style={{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'}}>
+                <div style={{
+                  height:'100%',borderRadius:'2px',width:`${volume*100}%`,
+                  background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',
+                  transition:'width 0.05s,background 0.15s',
+                }}/>
+              </div>
+            </div>
+          )}
+          {micOn&&(
+            <div style={{marginBottom:'8px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
+                <span style={{fontSize:'0.68rem',color:'#CCC'}}>Czułość mikrofonu</span>
+                <span style={{fontFamily:'monospace',fontSize:'0.68rem',color:'#CCC'}}>{Math.round(sensitivity*1000)}</span>
+              </div>
+              <input type="range" min="5" max="80"
+                value={Math.round(sensitivity*1000)}
+                onChange={e=>setSensitivity(Number(e.target.value)/1000)}/>
+            </div>
+          )}
+
+        </div>
+      )}
+    </div>
+  );
 }
 
-/* ─── App ───────────────────────────────────────────────────── */
+/* ─── App root ──────────────────────────────────────────────── */
 function App(){
-  const appEl=document.getElementById('app');
-  let screen='setup';
-  let cfg=null;
-  let playKey=0;
+  const[screen,setScreen]=useState('setup');
+  const[cfg,setCfg]=useState(null);
+  const[playKey,setPlayKey]=useState(0);
 
-  function handleStart(c){
-    cfg=c; screen='playing'; playKey++;
-    render();
-  }
-  function handleRestart(){
-    playKey++; screen='playing'; render();
-  }
-  function handleStop(){
-    screen='setup'; render();
-  }
+  const handleStart=c=>{setCfg(c);setScreen('playing');setPlayKey(k=>k+1);};
+  const handleRestart=()=>setPlayKey(k=>k+1);
 
-  function render(){
-    appEl.innerHTML='';
-    if(screen==='setup'){
-      appEl.appendChild(SetupScreen(handleStart));
-    } else if(screen==='playing'&&cfg){
-      appEl.appendChild(PlayingScreen(cfg.song, cfg.settings, cfg.bpm, handleStop, handleRestart));
-    }
-  }
-  render();
+  return(
+    <div className="shell">
+      {screen==='setup'&&(
+        <SetupScreen onStart={handleStart}/>
+      )}
+      {screen==='playing'&&cfg&&(
+        <PlayingScreen
+          key={playKey}
+          song={cfg.song}
+          settings={cfg.settings}
+          bpm={cfg.bpm}
+          onStop={()=>setScreen('setup')}
+          onRestart={handleRestart}
+        />
+      )}
+    </div>
+  );
 }
 
-App();
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
 </script>
 </body>
 </html>
