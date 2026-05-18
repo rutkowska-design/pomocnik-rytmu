@@ -655,13 +655,14 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     const el=lyricRef.current;
     if(!el) return;
     const MAX=24, MIN=10;
+    // Always reset to MAX first — React may have cleared inline fontSize
     el.style.fontSize=MAX+'px';
     let size=MAX;
     while(el.scrollWidth>el.offsetWidth+1&&size>MIN){
       size-=0.5;
       el.style.fontSize=size+'px';
     }
-  },[lyricKey]);
+  }); // no deps: runs after every render so React can never override our value
 
   const phaseTag=useMemo(()=>{
     if(!currentEntry) return '';
@@ -803,7 +804,6 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
                 {/* Current line */}
                 <p ref={lyricRef} style={{
                   margin:'0 0 16px',lineHeight:'2',
-                  fontSize:'clamp(1.15rem,5.5vw,1.55rem)',
                   padding:'6px 0',borderRadius:'10px',
                   whiteSpace:'nowrap',overflow:'hidden',
                   background:signal==='go'?'#DEEEF9':'transparent',
@@ -872,7 +872,6 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
                 {/* Drum solo — main text with underline like active siódemka */}
                 <p ref={lyricRef} style={{
                   margin:'0 0 16px',lineHeight:'2',
-                  fontSize:'clamp(1.15rem,5.5vw,1.55rem)',
                   padding:'6px 0',whiteSpace:'nowrap',overflow:'hidden',
                   animation:'lyricSlide 0.2s ease',
                 }}>
