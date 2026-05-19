@@ -38,70 +38,160 @@ const SONGS = {
   trgnala: {
     id:'trgnala', name:'Trgnała Donka',
     timeSig:7, grouping:[2,2,3], defaultBpm:80,
-    introMeasures:4, pauseMeasures:1,
-    // stanzas: array of lines, each line = array of measure-segments (one per 7/8)
-    // first word of each segment = measure downbeat → bolded + blue in display
-    stanzas:[
-      [
-        ["Trgnała","Donka na","woda lele"],
-        ["Trgnała","aaa","Donka na","woda","aaa"],
-        ["Na taja","czeszma sza","rena lele"],
-        ["Po ładna","woda stu","dena","aaa"],
-        ["Na taja","czeszma sza","rena lele"],
-        ["Po ładna","woda stu","dena","aaa"],
-      ],
-      [
-        ["Sretna ja","owczar bu","dała lele"],
-        ["Sretna ja","aaa","owczar bu","dała","aaa"],
-        ["I na Don","ka i go","wori lele"],
-        ["Daj Done","da te ce","liwam","aaa"],
-        ["I na Don","ka i go","wori lele"],
-        ["Daj Done","da te ce","liwam","aaa"],
-      ],
-      [
-        ["Dejgidi","owczar bu","dała lele"],
-        ["Dejgidi","aaa","owczar bu","dała","aaa"],
-        ["Owde se","Donka ne","liubi lele"],
-        ["Owde se","Donka ne","liubi","aaa"],
-        ["Owde se","Donka ne","liubi lele"],
-        ["Owde se","Donka ne","liubi","aaa"],
-      ],
-      [
-        ["Wodi me","doma wo","dwori lele"],
-        ["Wodi me","aaa","doma wo","dwori","aaa"],
-        ["Tamu kie","Donka ce","liwasz lele"],
-        ["Tamu kie","Donka ce","liwasz","aaa"],
-        ["Tamu kie","Donka ce","liwasz lele"],
-        ["Tamu kie","Donka ce","liwasz","aaa"],
-      ],
-      [
-        ["Majko le","stara maj","czice mori"],
-        ["Majko le","aaa","stara maj","czice","aaa"],
-        ["Izlezi","majko da","widisz lele"],
-        ["Cziwo e","owa ma","gare","aaa"],
-        ["Izlezi","majko da","widisz lele"],
-        ["Cziwo e","owa ma","gare","aaa"],
-      ],
+    introMeasures:4,
+    // sections: array of {label, lines, pauseAfter}
+    // lines: array of lines, each line = array of measure-segments
+    // first char of first word of each segment → bold + blue highlight
+    sections:[
+      { label:'Zwrotka 1', pauseAfter:1, lines:[
+        [["Trgnała","Donka na","woda lele"],
+         ["Trgnała","aaa","Donka na","woda","aaa"],
+         ["Na taja","czeszma sza","rena lele"],
+         ["Po ładna","woda stu","dena","aaa"],
+         ["Na taja","czeszma sza","rena lele"],
+         ["Po ładna","woda stu","dena","aaa"]],
+      ]},
+      { label:'Zwrotka 2', pauseAfter:1, lines:[
+        [["Sretna ja","owczar bu","dała lele"],
+         ["Sretna ja","aaa","owczar bu","dała","aaa"],
+         ["I na Don","ka i go","wori lele"],
+         ["Daj Done","da te ce","liwam","aaa"],
+         ["I na Don","ka i go","wori lele"],
+         ["Daj Done","da te ce","liwam","aaa"]],
+      ]},
+      { label:'Zwrotka 3', pauseAfter:1, lines:[
+        [["Dejgidi","owczar bu","dała lele"],
+         ["Dejgidi","aaa","owczar bu","dała","aaa"],
+         ["Owde se","Donka ne","liubi lele"],
+         ["Owde se","Donka ne","liubi","aaa"],
+         ["Owde se","Donka ne","liubi lele"],
+         ["Owde se","Donka ne","liubi","aaa"]],
+      ]},
+      { label:'Zwrotka 4', pauseAfter:1, lines:[
+        [["Wodi me","doma wo","dwori lele"],
+         ["Wodi me","aaa","doma wo","dwori","aaa"],
+         ["Tamu kie","Donka ce","liwasz lele"],
+         ["Tamu kie","Donka ce","liwasz","aaa"],
+         ["Tamu kie","Donka ce","liwasz lele"],
+         ["Tamu kie","Donka ce","liwasz","aaa"]],
+      ]},
+      { label:'Zwrotka 5', pauseAfter:1, lines:[
+        [["Majko le","stara maj","czice mori"],
+         ["Majko le","aaa","stara maj","czice","aaa"],
+         ["Izlezi","majko da","widisz lele"],
+         ["Cziwo e","owa ma","gare","aaa"],
+         ["Izlezi","majko da","widisz lele"],
+         ["Cziwo e","owa ma","gare","aaa"]],
+      ]},
     ],
   },
-  dere:       { id:'dere',       name:'Dere Geliyor',  comingSoon:true },
-  niePamietam:{ id:'niePamietam',name:'Nie pamiętam',  comingSoon:true },
+
+  dere: {
+    id:'dere', name:'Dere Geliyor',
+    timeSig:9, grouping:[2,2,2,3], defaultBpm:60,
+    introMeasures:4,
+    sections:[
+      // ── Zwrotka 1 ──────────────────────────────────────────
+      { label:'Zwrotka 1', pauseAfter:0, lines:[
+        [["Dere geliyor dere yalelel yalelel"],
+         ["Kumunu sere sere yalelelli"],
+         ["Al beni götür dere yalelel yalelel"],
+         ["Yarin olduğu yere yalelelli"]],
+      ]},
+      // ── Refren 1 ───────────────────────────────────────────
+      { label:'Refren', pauseAfter:0, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+      // ── Refren 2 ───────────────────────────────────────────
+      { label:'Refren', pauseAfter:2, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+      // ── Zwrotka 2 ──────────────────────────────────────────
+      { label:'Zwrotka 2', pauseAfter:0, lines:[
+        [["Ben armudu dişledim yalelel yalelel"],
+         ["Sapıni gümüşledim yalelelli"],
+         ["Sevdiğimin ismini yalelel yalelel"],
+         ["Mendilime işledim yalelelli"]],
+      ]},
+      { label:'Refren', pauseAfter:0, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+      { label:'Refren', pauseAfter:2, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+      // ── Zwrotka 3 ──────────────────────────────────────────
+      { label:'Zwrotka 3', pauseAfter:0, lines:[
+        [["Armut Dalda Bir iki Yalelel Yalelel"],
+         ["Sayin Bakin On Iki Yalelellim"],
+         ["On Ikinin Içinde Yalelel Yalelel"],
+         ["Birincisi Benimki Yalelellim"]],
+      ]},
+      { label:'Refren', pauseAfter:0, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+      { label:'Refren', pauseAfter:2, lines:[
+        [["Amanın aman aman / Zamanın zaman zaman"],
+         ["Bizim düğün ne zaman yalelelli"]],
+      ]},
+    ],
+  },
+
+  niePamietam: {
+    id:'niePamietam', name:'Gajdine swirjat',
+    timeSig:9, grouping:[2,2,2,3], defaultBpm:100,
+    introMeasures:4,
+    sections:[
+      { label:'Zwrotka 1', pauseAfter:1, lines:[
+        [["Gajdine swirjat","na choriszteno"],
+         ["Gajdine swirjat","na choriszteno"],
+         ["Choro se wie","na tri kyrk'elja"],
+         ["Choro se wie","na tri kyrk'elja"]],
+      ]},
+      { label:'Zwrotka 2', pauseAfter:1, lines:[
+        [["Porwono choro","moma go wodi"],
+         ["Porwono choro","moma go wodi"],
+         ["Moma go wodi","s kitka go korszi"],
+         ["Moma go wodi","s kitka go korszi"]],
+      ]},
+      { label:'Zwrotka 3', pauseAfter:1, lines:[
+        [["Wtorono choro","junak go wodi"],
+         ["Wtorono choro","junak go wodi"],
+         ["Junak go wodi","s pojas go korszi"],
+         ["Junak go wodi","s pojas go korszi"]],
+      ]},
+      { label:'Zwrotka 4', pauseAfter:0, lines:[
+        [["Tretono choro","starec go wodi"],
+         ["Tretono choro","starec go wodi"],
+         ["Starec go wodi","s bastun go korszi"],
+         ["Starec go wodi","s bastun go korszi"]],
+      ]},
+    ],
+  },
 };
 
-/* build flat timeline: one entry per 7/8 measure */
+/* build flat timeline: one entry per measure */
 function buildTimeline(song){
   if(song.comingSoon) return [];
   const tl=[];
   for(let i=0;i<song.introMeasures;i++)
-    tl.push({type:'intro',expectEntry:false,stanza:-1,line:-1,seg:-1,segments:[]});
-  song.stanzas.forEach((stanza,si)=>{
-    stanza.forEach((segments,li)=>{
+    tl.push({type:'intro',expectEntry:false,section:-1,line:-1,segments:[]});
+  song.sections.forEach((section,si)=>{
+    // section.lines is an array containing one array of lines (kept for compat)
+    const lines=section.lines[0];
+    lines.forEach((segments,li)=>{
       segments.forEach((seg,mi)=>{
-        tl.push({type:'verse',segments,currentSeg:mi,expectEntry:mi===0,stanza:si,line:li});
+        tl.push({type:'verse',segments,currentSeg:mi,expectEntry:mi===0,
+                 section:si,line:li,sectionLabel:section.label});
       });
     });
-    for(let i=0;i<song.pauseMeasures;i++)
-      tl.push({type:'pause',expectEntry:false,stanza:si,line:-1,seg:-1,segments:[]});
+    const pa=section.pauseAfter||0;
+    for(let i=0;i<pa;i++)
+      tl.push({type:'pause',expectEntry:false,section:si,line:-1,segments:[],sectionLabel:section.label});
   });
   return tl;
 }
@@ -256,7 +346,7 @@ function SetupScreen({onStart}){
         fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',
         color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em',
       }}>
-        Pomocnik<br/>rytmiczny
+        Pomocnik<br/>rymiczny
       </h1>
 
       {/* Song */}
@@ -303,7 +393,7 @@ function SetupScreen({onStart}){
           </h2>
           <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'3px'}}>Grupowanie: {groupStr}</p>
           <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'20px'}}>
-            Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'} · przerwa po każdej zwrotce
+            Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'}
           </p>
           <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
 
@@ -447,13 +537,13 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
       const isVerseStart=bi===0 && entry.expectEntry;
 
       // Accent on beats 1, 3, 5 (index 0, 2, 4)
-      const type=[0,2,4].includes(bi)?'accent':'soft';
+      const type=gs.has(bi)?'accent':'soft';
 
       if(soundOnR.current) playClick(ctx,type,t);
       if(isVerseStart){
         expectedEntryR.current=t;
         // Window = 2.5 eighth notes after expected time
-        const windowMs=(30/bpmR.current)*2.5*1000;
+        const windowMs=(30/bpmR.current)*2.5*1000; // 2.5 measures
         const entryDelay=Math.max(0,(t-ctx.currentTime)*1000)+windowMs;
         clearTimeout(missedTimerR.current);
         missedTimerR.current=setTimeout(()=>{
@@ -536,7 +626,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
       }
     } else {
       // Go to start of current verse line, or previous one
-      const curLineStart=tl.slice(0,cur+1).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
+      const curLineStart=tl.slice(0,cur+1).map((e,i)=>({e,i})).filter(x=>x.e.type==='verse'&&x.e.expectEntry).slice(-1)[0]?.i??0;
       const prevStart  =tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
       target = cur===curLineStart ? prevStart : curLineStart;
     }
@@ -622,31 +712,38 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
   /* Lyrics display info */
   const lyricsInfo=useMemo(()=>{
     if(!currentEntry||currentEntry.type!=='verse') return null;
-    const{segments,currentSeg,stanza:si,line:li}=currentEntry;
-    const st=song.stanzas;
-    const isLastLineOfStanza=li===st[si].length-1;
+    const{segments,currentSeg,section:si,line:li}=currentEntry;
+    const secs=song.sections;
+    const lines=secs[si].lines[0];
+    const isLastLine=li===lines.length-1;
     let nextSegs=null;
     let nextIsDrumSolo=false;
-    if(isLastLineOfStanza&&song.pauseMeasures>0){
+    if(isLastLine&&(secs[si].pauseAfter||0)>0){
       nextIsDrumSolo=true;
-    } else if(li+1<st[si].length){
-      nextSegs=st[si][li+1];
-    } else if(si+1<st.length){
-      nextSegs=st[si+1][0];
+    } else if(li+1<lines.length){
+      nextSegs=lines[li+1];
+    } else if(si+1<secs.length){
+      nextSegs=secs[si+1].lines[0][0];
     }
-    return{segments,currentSeg,nextSegs,nextIsDrumSolo};
-  },[currentEntry,song.stanzas,song.pauseMeasures]);
+    let prevSegs=null;
+    if(li>0) prevSegs=lines[li-1];
+    else if(si>0){
+      const prevLines=secs[si-1].lines[0];
+      prevSegs=prevLines[prevLines.length-1];
+    }
+    return{segments,currentSeg,nextSegs,nextIsDrumSolo,prevSegs};
+  },[currentEntry,song.sections]);
 
-  /* Preview during intro/pause: first line of first stanza */
+  /* Preview during intro/pause: first line of next section */
   const previewSegs=useMemo(()=>{
-    if(!currentEntry) return song.stanzas?.[0]?.[0]||[];
+    const first=song.sections?.[0]?.lines?.[0]?.[0]||[];
+    if(!currentEntry) return first;
     if(currentEntry.type==='pause'){
-      const nextSi=currentEntry.stanza+1;
-      return song.stanzas?.[nextSi]?.[0]||song.stanzas?.[0]?.[0]||[];
+      const nextSi=currentEntry.section+1;
+      return song.sections?.[nextSi]?.lines?.[0]?.[0]||first;
     }
-    // intro — show first stanza
-    return song.stanzas?.[0]?.[0]||[];
-  },[currentEntry,song.stanzas]);
+    return first;
+  },[currentEntry,song.sections]);
 
   /* ── Auto-size lyric line to always fit one row ── */
   const lyricRef=useRef(null);
@@ -668,7 +765,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     if(!currentEntry) return '';
     if(currentEntry.type==='intro') return 'Drum solo!';
     if(currentEntry.type==='pause') return 'Drum solo!';
-    return`Zwrotka ${currentEntry.stanza+1}`;
+    return currentEntry.sectionLabel||'';
   },[currentEntry]);
 
   /* ── End screen ────────────────────────────────────────────── */
@@ -732,7 +829,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
             fontFamily:'DM Sans,sans-serif',fontWeight:'600',
             fontSize:'0.78rem',color:'#AAA',
             whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
-          }}>Pomocnik rytmiczny</div>
+          }}>Pomocnik rymiczny</div>
           <div style={{
             fontFamily:'Syne,sans-serif',fontWeight:700,
             fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',
@@ -801,6 +898,24 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
           }}>
             {lyricsInfo?(
               <>
+                {/* Previous line */}
+                {lyricsInfo.prevSegs?(
+                  <p style={{margin:'0 0 16px',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
+                    {lyricsInfo.prevSegs.map((seg,i)=>{
+                      const words=seg.trim().split(/\s+/);
+                      const first=words[0];
+                      const rest=words.slice(1).join(' ');
+                      return(
+                        <React.Fragment key={i}>
+                          {i>0&&' '}
+                          <span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{first[0]}</span><span style={{color:'#BDBAB5'}}>{first.slice(1)}</span>
+                          {rest&&<span style={{color:'#C8C4BF'}}>{' '+rest}</span>}
+                        </React.Fragment>
+                      );
+                    })}
+                  </p>
+                ):<div style={{marginBottom:'16px'}}/>}
+
                 {/* Current line */}
                 <p ref={lyricRef} style={{
                   margin:'0 0 16px',lineHeight:'2',
