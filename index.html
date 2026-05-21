@@ -17,9 +17,33 @@ body{background:#EDEBE6;font-family:'DM Sans',sans-serif;color:#1a1a1a;-webkit-f
 .shell{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.08);overflow-x:hidden;}
 button{border:none;background:none;cursor:pointer;font-family:inherit}
 select{font-family:'DM Sans',sans-serif}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:#E8E6E1;border-radius:2px;outline:none;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#1a1a1a;cursor:pointer;}
-input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#1a1a1a;cursor:pointer;border:none;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:44px;background:transparent;outline:none;
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:4px;background:#E8E6E1;border-radius:2px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:44px;height:44px;border-radius:50%;
+  background:#1a1a1a;cursor:pointer;
+  margin-top:-20px;
+  /* Shrink visual to 24px while keeping 44px hit area */
+  box-shadow:0 0 0 10px transparent;
+  background-clip:content-box;
+  padding:10px;
+  background-color:#1a1a1a;
+  box-sizing:border-box;
+}
+input[type=range]::-moz-range-track{
+  height:4px;background:#E8E6E1;border-radius:2px;
+}
+input[type=range]::-moz-range-thumb{
+  width:24px;height:24px;border-radius:50%;
+  background:#1a1a1a;cursor:pointer;border:none;
+}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
 @keyframes lyricSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -143,7 +167,7 @@ const SONGS = {
 
   niePamietam: {
     id:'niePamietam', name:'Gajdine swirjat',
-    timeSig:9, grouping:[2,2,2,3], defaultBpm:100,
+    timeSig:9, grouping:[2,2,2,3], defaultBpm:120,
     introMeasures:4,
     sections:[
       { label:'Zwrotka 1', pauseAfter:1, lines:[
@@ -397,16 +421,7 @@ function SetupScreen({onStart}){
           </p>
           <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
 
-          <div style={{marginTop:'24px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'10px'}}>
-              <span style={{fontSize:'0.85rem',color:'#999'}}>Tempo</span>
-              <span style={{fontFamily:'monospace',fontSize:'0.9rem',fontWeight:'600',color:'#555'}}>
-                {bpm} BPM
-              </span>
-            </div>
-            <input type="range" min="50" max="160" value={bpm}
-              onChange={e=>setBpm(Number(e.target.value))}/>
-          </div>
+
         </div>
       )}
 
@@ -483,6 +498,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
   const[micOn,       setMicOn       ]=useState(false);
   const[micError,    setMicError    ]=useState(null);
   const[volume,      setVolume      ]=useState(0);
+  const[bpm,         setBpm         ]=useState(initBpm);
 
   const ctxRef        =useRef(null);
   const intRef        =useRef(null);
@@ -492,6 +508,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
   const playingR      =useRef(false);
   const isPausedR     =useRef(false);
   const bpmR          =useRef(initBpm);
+  useEffect(()=>{bpmR.current=bpm;},[bpm]);
   const soundOnR      =useRef(settings.sound);
   const timelineR     =useRef(timeline);
   const timeSigR      =useRef(song.timeSig);
@@ -511,7 +528,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
 
 
 
-  /* ── Scheduler ─────────────────────────────────────────────── */
+/* ── Scheduler ─────────────────────────────────────────────── */
   const schedule=useCallback(()=>{
     const ctx=ctxRef.current;
     if(!ctx||!playingR.current||isPausedR.current) return;
@@ -1110,6 +1127,49 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
           }}>⏭</button>
         </div>
       </div>
+
+      {/* ── BPM control — outside card ── */}
+      <div style={{marginBottom:'16px'}}>{(()=>{
+        const MIN=40,MAX=220,STEP=10;
+        const defaultBpm=song.defaultBpm||80;
+        const defaultPct=(defaultBpm-MIN)/(MAX-MIN);
+        return(
+          <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'6px'}}>
+              <span style={{fontSize:'0.72rem',color:'#AAA',letterSpacing:'0.05em'}}>Tempo</span>
+              <span style={{fontFamily:'monospace',fontSize:'0.8rem',color:'#888'}}>{bpm} BPM</span>
+            </div>
+            {/* Default BPM label above track */}
+            <div style={{position:'relative',marginBottom:'2px',height:'18px'}}>
+              <span style={{
+                position:'absolute',
+                left:`calc(22px + ${defaultPct} * (100% - 44px))`,
+                transform:'translateX(-50%)',
+                fontFamily:'monospace',fontSize:'0.78rem',fontWeight:'600',
+                color:'#AAAAAA',
+                whiteSpace:'nowrap',
+              }}>{defaultBpm}</span>
+            </div>
+            {/* Track with default tick overlay */}
+            <div style={{position:'relative'}}>
+              {/* Tick behind thumb */}
+              <div style={{
+                position:'absolute',
+                left:`calc(22px + ${defaultPct} * (100% - 44px))`,
+                top:'50%',
+                transform:'translate(-50%,-50%)',
+                width:'2px',height:'18px',
+                background:'#1a1a1a',
+                borderRadius:'1px',
+                pointerEvents:'none',
+                zIndex:0,
+              }}/>
+              <input type="range" min={MIN} max={MAX} step={STEP} value={bpm}
+                onChange={e=>setBpm(Number(e.target.value))}/>
+            </div>
+          </>
+        );
+      })()}</div>
 
       {/* ── Mic panel — outside card ── */}
       {settings.voice&&(
