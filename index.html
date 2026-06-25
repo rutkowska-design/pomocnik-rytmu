@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pomocnik Rytmiczny</title>
+<title>Pomocnik Rytmu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"/>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -30,7 +30,6 @@ input[type=range]::-webkit-slider-thumb{
   width:44px;height:44px;border-radius:50%;
   background:#1a1a1a;cursor:pointer;
   margin-top:-20px;
-  /* Shrink visual to 24px while keeping 44px hit area */
   box-shadow:0 0 0 10px transparent;
   background-clip:content-box;
   padding:10px;
@@ -49,7 +48,6 @@ input[type=range]::-moz-range-thumb{
 @keyframes lyricSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulseRing{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:0.85}}
 @keyframes dot{0%,100%{opacity:.3}50%{opacity:1}}
-
 </style>
 </head>
 <body>
@@ -57,7 +55,6 @@ input[type=range]::-moz-range-thumb{
 <script type="text/babel">
 const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
 
-/* ─── Song definitions ──────────────────────────────────────── */
 const SONGS = {
   trgnala: {
     id:'trgnala', name:'Trgnała Donka',
@@ -106,31 +103,27 @@ const SONGS = {
       ]},
     ],
   },
-    dere: {
+  dere: {
     id:'dere', name:'Dere Geliyor',
     timeSig:9, grouping:[2,2,2,3], defaultBpm:120,
     introMeasures:4,
     sections:[
-      // ── Zwrotka 1 ──────────────────────────────────────────
       { label:'Zwrotka 1', pauseAfter:0, lines:[
         [["Dere geliyor dere","yalelel yalelel"],
          ["Kumunu sere sere","yalelelli"],
          ["Al beni götür dere","yalelel yalelel"],
          ["Yarin olduğu yere","yalelelli"]],
       ]},
-      // ── Refren 1 ───────────────────────────────────────────
       { label:'Refren', pauseAfter:0, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
-      // ── Refren 2 ───────────────────────────────────────────
       { label:'Refren', pauseAfter:2, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
-      // ── Zwrotka 2 ──────────────────────────────────────────
       { label:'Zwrotka 2', pauseAfter:0, lines:[
         [["Ben armudu dişledim","yalelel yalelel"],
          ["Sapıni gümüşledim","yalelelli"],
@@ -138,16 +131,15 @@ const SONGS = {
          ["Mendilime işledim","yalelelli"]],
       ]},
       { label:'Refren', pauseAfter:0, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
       { label:'Refren', pauseAfter:2, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
-      // ── Zwrotka 3 ──────────────────────────────────────────
       { label:'Zwrotka 3', pauseAfter:0, lines:[
         [["Armut dalda bir iki","yalelel yalelel"],
          ["Sayin bakin on iki","yalelellim"],
@@ -155,18 +147,17 @@ const SONGS = {
          ["Birincisi benimki","yalelellim"]],
       ]},
       { label:'Refren', pauseAfter:0, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
       { label:'Refren', pauseAfter:2, lines:[
-                [["Amanın aman aman"],
+        [["Amanın aman aman"],
          ["Zamanın zaman zaman"],
          ["Bizim düğün ne zaman","yalelelli"]],
       ]},
     ],
   },
-
   achMerak: {
     id:'achMerak', name:'Ach merak', beta:true,
     type:'pitch',
@@ -174,14 +165,14 @@ const SONGS = {
     audioOffset:2.0,
     verses:[
       {text:'Ach merak miła majko pust merak',
-       upper:[[0,650,59],[1022,371,61],[2694,278,66],[3715,2229,64],[7895,278,64],[8266,279,69],[8661,1022,66],[10263,2229,64],[13235,836,61],[14350,279,61]],
-       lower:[[209,371,59],[952,464,61],[1509,372,59],[2067,2322,64],[4574,1672,60],[7245,1021,64],[8359,279,65],[8731,929,64],[9752,279,62],[10124,371,61],[11053,278,61],[11517,2972,61],[14582,279,59]]},
+       upper:[[0,650,59],[743,93,66],[1022,371,61],[1579,93,60],[1858,185,60],[2136,93,65],[2322,93,64],[2508,93,65],[2694,278,66],[3065,93,67],[3715,2229,64],[7245,185,66],[7616,93,68],[7895,278,64],[8266,279,69],[8661,1022,66],[9892,93,68],[10263,2229,64],[12678,93,66],[12864,93,63],[13050,92,64],[13235,836,61],[14164,93,62],[14350,279,61]],
+       lower:[[23,93,60],[209,371,59],[952,464,61],[1509,372,59],[2067,2322,64],[4574,1672,60],[7059,93,63],[7245,1021,64],[8359,279,65],[8731,929,64],[9752,279,62],[10124,371,61],[10681,93,61],[10867,93,62],[11053,278,61],[11517,2972,61],[14582,279,59]]},
       {text:'Toj szte me miła majko umori',
-       upper:[[765,372,64],[1369,557,65],[3041,1672,64],[5456,1300,62],[8405,278,64],[8869,372,65],[9334,371,64],[9798,1115,62],[11098,1765,62]],
-       lower:[[115,465,59],[1137,232,62],[1462,1208,61],[2762,279,62],[3134,371,61],[3691,2972,61],[6756,1649,62],[8683,279,62],[9055,279,61],[9798,372,62],[10355,2694,62]]},
+       upper:[[22,186,60],[394,93,60],[580,93,65],[765,372,64],[1369,557,65],[2298,93,67],[2484,186,66],[2855,93,68],[3041,1672,64],[4806,186,66],[5177,186,64],[5456,1300,62],[7848,184,66],[8125,187,65],[8405,278,64],[8869,372,65],[9334,371,64],[9798,1115,62],[11098,1765,62],[12956,93,61]],
+       lower:[[115,465,59],[673,92,62],[858,186,61],[1137,232,62],[1462,1208,61],[2762,279,62],[3134,371,61],[3691,2972,61],[6756,1649,62],[8498,93,61],[8683,279,62],[9055,279,61],[9427,185,62],[9798,372,62],[10355,2694,62]]},
       {text:'Toj szte me żiwa w groba zarowi',
-       upper:[[4,371,59],[747,371,64],[1536,372,64],[2187,371,67],[3394,929,65],[5739,279,64],[6482,372,61],[9106,650,64],[10314,371,63],[11428,743,62],[12264,464,61],[13100,836,61]],
-       lower:[[97,464,59],[840,278,64],[1211,325,65],[1629,2044,64],[4323,743,62],[5159,371,61],[5623,372,62],[6831,557,61],[8456,464,61],[9571,464,62],[10128,1207,61],[11428,836,62],[12450,1114,62]]},
+       upper:[[4,371,59],[561,93,65],[747,371,64],[1536,372,64],[2187,371,67],[2930,92,68],[3208,93,64],[3394,929,65],[4416,93,64],[4694,93,64],[4973,93,64],[5159,185,65],[5461,185,66],[5739,279,64],[6297,92,62],[6482,372,61],[6947,185,62],[7225,93,61],[8270,186,67],[8549,93,66],[8827,93,64],[9106,650,64],[10035,186,65],[10314,371,63],[10778,186,61],[11149,186,61],[11428,743,62],[12264,464,61],[13100,836,61]],
+       lower:[[97,464,59],[654,93,65],[840,278,64],[1211,325,65],[1629,2044,64],[3766,92,65],[4043,187,61],[4323,743,62],[5159,371,61],[5623,372,62],[6180,93,62],[6366,186,61],[6645,93,62],[6831,557,61],[8456,464,61],[9013,186,62],[9292,186,61],[9571,464,62],[10128,1207,61],[11428,836,62],[12450,1114,62],[13750,93,62]]},
     ],
   },
   niePamietam: {
@@ -217,7 +208,6 @@ const SONGS = {
   },
 };
 
-/* build flat timeline: one entry per measure */
 function buildTimeline(song){
   if(song.comingSoon) return [];
   const tl=[];
@@ -226,13 +216,11 @@ function buildTimeline(song){
   song.sections.forEach((section,si)=>{
     const lines=section.lines[0];
     lines.forEach((segments,li)=>{
-      // Count total measures: each | inside a segment adds one extra measure
       let isFirst=true;
       segments.forEach((seg,mi)=>{
         const parts=seg.split('|');
         parts.forEach((part,pi)=>{
-          tl.push({type:'verse',segments,currentSeg:mi,currentPart:pi,
-                   expectEntry:isFirst,section:si,line:li,sectionLabel:section.label});
+          tl.push({type:'verse',segments,currentSeg:mi,currentPart:pi,expectEntry:isFirst,section:si,line:li,sectionLabel:section.label});
           isFirst=false;
         });
       });
@@ -250,7 +238,6 @@ function getGroupStarts(grp){
   return s;
 }
 
-/* ─── Audio helpers ─────────────────────────────────────────── */
 function playClick(ctx,type,time){
   const osc=ctx.createOscillator(),g=ctx.createGain();
   osc.connect(g); g.connect(ctx.destination);
@@ -282,94 +269,35 @@ function detectPitch(buf,sr){
   return bestP>0?sr/bestP:null;
 }
 
-/* ─── Checkbox component ────────────────────────────────────── */
 function Checkbox({label,description,checked,onChange}){
   return(
-    <label
-      onClick={onChange}
-      style={{
-        display:'flex',gap:'16px',cursor:'pointer',userSelect:'none',
-        padding:'0 0 22px',
-      }}
-    >
-      <div style={{
-        marginTop:'2px',width:'24px',height:'24px',flexShrink:0,
-        borderRadius:'6px',
-        border:`2px solid ${checked?'#1a1a1a':'#D5D2CB'}`,
-        background:checked?'#1a1a1a':'transparent',
-        display:'flex',alignItems:'center',justifyContent:'center',
-        transition:'all 0.15s',
-      }}>
-        {checked&&(
-          <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-            <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
+    <label onClick={onChange} style={{display:'flex',gap:'16px',cursor:'pointer',userSelect:'none',padding:'0 0 22px'}}>
+      <div style={{marginTop:'2px',width:'24px',height:'24px',flexShrink:0,borderRadius:'6px',border:`2px solid ${checked?'#1a1a1a':'#D5D2CB'}`,background:checked?'#1a1a1a':'transparent',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
+        {checked&&(<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>)}
       </div>
       <div>
-        <div style={{fontSize:'1rem',fontWeight:'600',lineHeight:'1.4',color:'#1a1a1a'}}>
-          {label}
-        </div>
-        {description&&(
-          <div style={{fontSize:'0.875rem',color:'#999',lineHeight:'1.5',marginTop:'2px'}}>
-            {description}
-          </div>
-        )}
+        <div style={{fontSize:'1rem',fontWeight:'600',lineHeight:'1.4',color:'#1a1a1a'}}>{label}</div>
+        {description&&(<div style={{fontSize:'0.875rem',color:'#999',lineHeight:'1.5',marginTop:'2px'}}>{description}</div>)}
       </div>
     </label>
   );
 }
 
-/* ─── Beat row ──────────────────────────────────────────────── */
 function BeatRow({timeSig,grouping,activeBeat,noAccent}){
   const gs=getGroupStarts(grouping);
   const items=[];
   for(let i=0;i<timeSig;i++){
     const isGS=gs.has(i), isActive=i===activeBeat;
-    // Beat 1 gets blue only when noAccent is false
     const isMain=i===0&&!noAccent;
-    if(isGS&&i>0)
-      items.push(<div key={`g${i}`} style={{width:'8px',flexShrink:0}}/>);
-    items.push(
-      <div key={i} style={{
-        flex:1,minWidth:0,
-        display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',
-      }}>
-        <div style={{
-          width:'100%',aspectRatio:'1',borderRadius:'8px',
-          maxWidth:'52px',
-          border:`1.5px solid ${isMain?'#6BBDD8':'#DEDBD4'}`,
-          background:isMain?'#C2E5F5':'#FAFAF8',
-          display:'flex',alignItems:'center',justifyContent:'center',
-          fontFamily:'monospace',fontSize:'clamp(0.65rem,2.5vw,0.9rem)',
-          fontWeight:isGS?'700':'500',
-          color:isMain?'#1B5E7A':'#B0AC9F',
-          transition:'transform 0.07s ease, box-shadow 0.07s ease',
-          transform:isActive?'scale(1.1)':'scale(1)',
-          boxShadow:isActive?'0 3px 10px rgba(0,0,0,0.14)':'none',
-          boxSizing:'border-box',
-        }}>{i+1}</div>
-        <div style={{
-          height:'3px',width:'60%',maxWidth:'28px',borderRadius:'2px',
-          background:isActive?'#3B1505':'transparent',
-          transition:'background 0.07s',
-        }}/>
-      </div>
-    );
+    if(isGS&&i>0) items.push(<div key={`g${i}`} style={{width:'8px',flexShrink:0}}/>);
+    items.push(<div key={i} style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
+      <div style={{width:'100%',aspectRatio:'1',borderRadius:'8px',maxWidth:'52px',border:`1.5px solid ${isMain?'#6BBDD8':'#DEDBD4'}`,background:isMain?'#C2E5F5':'#FAFAF8',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontSize:'clamp(0.65rem,2.5vw,0.9rem)',fontWeight:isGS?'700':'500',color:isMain?'#1B5E7A':'#B0AC9F',transition:'transform 0.07s ease, box-shadow 0.07s ease',transform:isActive?'scale(1.1)':'scale(1)',boxShadow:isActive?'0 3px 10px rgba(0,0,0,0.14)':'none',boxSizing:'border-box'}}>{i+1}</div>
+      <div style={{height:'3px',width:'60%',maxWidth:'28px',borderRadius:'2px',background:isActive?'#3B1505':'transparent',transition:'background 0.07s'}}/>
+    </div>);
   }
-  return(
-    <div style={{display:'flex',alignItems:'flex-start',flexWrap:'nowrap',width:'100%'}}>
-      {items}
-    </div>
-  );
+  return(<div style={{display:'flex',alignItems:'flex-start',flexWrap:'nowrap',width:'100%'}}>{items}</div>);
 }
 
-/* ─── Divider ───────────────────────────────────────────────── */
-const Divider=()=>(
-  <div style={{height:'1px',background:'#F0EDE8',margin:'4px 0 24px'}}/>
-);
-
-/* ─── Setup Screen ──────────────────────────────────────────── */
 function SetupScreen({onStart}){
   const[selectedId,setSelectedId]=useState('');
   const[settings,setSettings]=useState({voice:true,text:true,sound:true,visual:true});
@@ -377,231 +305,119 @@ function SetupScreen({onStart}){
   const song=selectedId?SONGS[selectedId]:null;
   const canStart=!!(song&&!song.comingSoon);
   const toggle=k=>setSettings(s=>({...s,[k]:!s[k]}));
-
-  useEffect(()=>{
-    if(song&&!song.comingSoon) setBpm(song.defaultBpm||80);
-  },[selectedId]);
-
+  useEffect(()=>{if(song&&!song.comingSoon) setBpm(song.defaultBpm||80);},[selectedId]);
   const isRhythm=song&&!song.comingSoon&&song.type!=='pitch';
   const groupStr=isRhythm?song.grouping.join('-'):'';
-  const tsLabel =isRhythm?`${song.timeSig}/8`:'';
+  const tsLabel=isRhythm?`${song.timeSig}/8`:'';
 
   return(
     <div style={{padding:'40px 28px 48px',minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-
-      {/* Title */}
-      <h1 style={{
-        fontFamily:'Syne,sans-serif',fontWeight:800,
-        fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',
-        color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em',
-      }}>
-        Pomocnik<br/>rymiczny
-      </h1>
-
-      {/* Song */}
+      <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'clamp(2rem,8vw,3rem)',lineHeight:'1.05',color:'#3B1505',marginBottom:'44px',letterSpacing:'-0.02em'}}>Pomocnik<br/>rymiczny</h1>
       <section style={{marginBottom:'32px'}}>
-        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'12px'}}>
-          Piosenka
-        </h2>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'12px'}}>Piosenka</h2>
         <div style={{position:'relative'}}>
-          <select
-            value={selectedId}
-            onChange={e=>setSelectedId(e.target.value)}
-            style={{
-              width:'100%',padding:'15px 48px 15px 18px',
-              border:'1.5px solid #D5D2CB',borderRadius:'12px',
-              fontSize:'1rem',background:'#fff',
-              color:selectedId?'#1a1a1a':'#BCBCBC',
-              appearance:'none',cursor:'pointer',outline:'none',
-              transition:'border-color 0.15s',
-            }}
-          >
+          <select value={selectedId} onChange={e=>setSelectedId(e.target.value)} style={{width:'100%',padding:'15px 48px 15px 18px',border:'1.5px solid #D5D2CB',borderRadius:'12px',fontSize:'1rem',background:'#fff',color:selectedId?'#1a1a1a':'#BCBCBC',appearance:'none',cursor:'pointer',outline:'none',transition:'border-color 0.15s'}}>
             <option value="">Wybierz</option>
-            {Object.values(SONGS).map(s=>(
-              <option key={s.id} value={s.id}>
-                {s.name}{s.comingSoon?' (wkrótce)':''}{s.beta?' 🔬':''}
-              </option>
-            ))}
+            {Object.values(SONGS).map(s=>(<option key={s.id} value={s.id}>{s.name}{s.comingSoon?' (wkrótce)':''}{s.beta?' 🔬':''}</option>))}
           </select>
-          <div style={{
-            position:'absolute',right:'18px',top:'50%',
-            transform:'translateY(-50%)',pointerEvents:'none',
-          }}>
-            <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
-              <path d="M1 1L7 7L13 1" stroke="#888" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+          <div style={{position:'absolute',right:'18px',top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>
+            <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 1L7 7L13 1" stroke="#888" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
         </div>
       </section>
-
-      {/* Song info (appears after selection) */}
-      {isRhythm&&(
-        <div style={{animation:'fadeUp 0.3s ease',marginBottom:'32px'}}>
-          <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'6px'}}>
-            Rytm — {tsLabel}
-          </h2>
-          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'3px'}}>Grupowanie: {groupStr}</p>
-          <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'20px'}}>
-            Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'}
-          </p>
-          <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
-
-
-        </div>
-      )}
-
-      {song&&song.comingSoon&&(
-        <div style={{
-          padding:'20px 18px',borderRadius:'12px',background:'#F9F8F5',
-          marginBottom:'32px',animation:'fadeUp 0.3s ease',
-          fontSize:'0.9rem',color:'#aaa',textAlign:'center',lineHeight:'1.6',
-        }}>
-          🎵 Ta piosenka jest jeszcze w przygotowaniu
-        </div>
-      )}
-
-      {/* Settings */}
+      {isRhythm&&(<div style={{animation:'fadeUp 0.3s ease',marginBottom:'32px'}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'6px'}}>Rytm — {tsLabel}</h2>
+        <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'3px'}}>Grupowanie: {groupStr}</p>
+        <p style={{fontSize:'0.875rem',color:'#999',marginBottom:'20px'}}>Wstęp: {song.introMeasures} ciche {song.timeSig===7?'siódemki':'dziewiątki'}</p>
+        <BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={-1}/>
+      </div>)}
+      {song&&song.comingSoon&&(<div style={{padding:'20px 18px',borderRadius:'12px',background:'#F9F8F5',marginBottom:'32px',animation:'fadeUp 0.3s ease',fontSize:'0.9rem',color:'#aaa',textAlign:'center',lineHeight:'1.6'}}>🎵 Ta piosenka jest jeszcze w przygotowaniu</div>)}
       <section style={{flex:1,marginBottom:'8px'}}>
-        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'20px'}}>
-          Ustawienia
-        </h2>
-        <Checkbox
-          label="Wykrywanie głosu"
-          description="Pomocnik wykryje czy wchodzisz w odpowiednim momencie. Konieczne udzielenie dostępu do mikrofonu. Nie musisz śpiewać, możesz ćwiczyć na przykład samo klaskanie."
-          checked={settings.voice} onChange={()=>toggle('voice')}
-        />
-        <Checkbox
-          label="Tekst"
-          description="Ludowe karaoke!"
-          checked={settings.text} onChange={()=>toggle('text')}
-        />
-        <Checkbox
-          label="Dźwięk"
-          description="Metronom wydaje delikatny dźwięk na początku każdej grupy dźwięków."
-          checked={settings.sound} onChange={()=>toggle('sound')}
-        />
-        <Checkbox
-          label="Wizualizacja"
-          description="Dodatkowe wskazówki wizualne."
-          checked={settings.visual} onChange={()=>toggle('visual')}
-        />
+        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.2rem',marginBottom:'20px'}}>Ustawienia</h2>
+        <Checkbox label="Wykrywanie głosu" description="Pomocnik wykryje czy wchodzisz w odpowiednim momencie. Konieczne udzielenie dostępu do mikrofonu. Nie musisz śpiewać, możesz ćwiczyć na przykład samo klaskanie." checked={settings.voice} onChange={()=>toggle('voice')}/>
+        <Checkbox label="Tekst" description="Ludowe karaoke!" checked={settings.text} onChange={()=>toggle('text')}/>
+        <Checkbox label="Dźwięk" description="Metronom wydaje delikatny dźwięk na początku każdej grupy dźwięków." checked={settings.sound} onChange={()=>toggle('sound')}/>
+        <Checkbox label="Wizualizacja" description="Dodatkowe wskazówki wizualne." checked={settings.visual} onChange={()=>toggle('visual')}/>
       </section>
-
-      {/* Start */}
-      <button
-        disabled={!canStart}
-        onClick={()=>onStart({song,settings,bpm:bpm||song.defaultBpm||80})}
-        style={{
-          width:'100%',padding:'19px',
-          background:canStart?'#1a1a1a':'#E8E6E1',
-          color:canStart?'#fff':'#C0BDB5',
-          borderRadius:'12px',
-          fontSize:'1.05rem',fontWeight:'700',
-          fontFamily:'Syne,sans-serif',letterSpacing:'0.06em',
-          transition:'all 0.2s',
-          cursor:canStart?'pointer':'not-allowed',
-        }}
-      >
-        Start
-      </button>
+      <button disabled={!canStart} onClick={()=>onStart({song,settings,bpm:bpm||song.defaultBpm||80})} style={{width:'100%',padding:'19px',background:canStart?'#1a1a1a':'#E8E6E1',color:canStart?'#fff':'#C0BDB5',borderRadius:'12px',fontSize:'1.05rem',fontWeight:'700',fontFamily:'Syne,sans-serif',letterSpacing:'0.06em',transition:'all 0.2s',cursor:canStart?'pointer':'not-allowed'}}>Start</button>
     </div>
   );
 }
 
-/* ─── Playing Screen ────────────────────────────────────────── */
 function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
   const timeline=useMemo(()=>buildTimeline(song),[song]);
-
-  const[activeBeat,  setActiveBeat  ]=useState(-1);
+  const[activeBeat,setActiveBeat]=useState(-1);
   const[currentEntry,setCurrentEntry]=useState(timeline[0]||null);
-  const[signal,      setSignal      ]=useState(null);
-  const[songEnded,   setSongEnded   ]=useState(false);
-  const[isPaused,    setIsPaused    ]=useState(false);
+  const[signal,setSignal]=useState(null);
+  const[songEnded,setSongEnded]=useState(false);
+  const[isPaused,setIsPaused]=useState(false);
   const[lastFeedback,setLastFeedback]=useState(null);
   const[feedbackHist,setFeedbackHist]=useState([]);
-  const[sensitivity, setSensitivity ]=useState(0.04);
-  const[micOn,       setMicOn       ]=useState(false);
-  const[micError,    setMicError    ]=useState(null);
-  const[volume,      setVolume      ]=useState(0);
-  const[bpm,         setBpm         ]=useState(initBpm);
+  const[sensitivity,setSensitivity]=useState(0.04);
+  const[micOn,setMicOn]=useState(false);
+  const[micError,setMicError]=useState(null);
+  const[volume,setVolume]=useState(0);
+  const[bpm,setBpm]=useState(initBpm);
 
-  const ctxRef        =useRef(null);
-  const intRef        =useRef(null);
-  const nextT         =useRef(0);
-  const beatR         =useRef(0);
-  const measR         =useRef(0);
-  const playingR      =useRef(false);
-  const isPausedR     =useRef(false);
-  const bpmR          =useRef(initBpm);
+  const ctxRef=useRef(null);
+  const intRef=useRef(null);
+  const nextT=useRef(0);
+  const beatR=useRef(0);
+  const measR=useRef(0);
+  const playingR=useRef(false);
+  const isPausedR=useRef(false);
+  const bpmR=useRef(initBpm);
   useEffect(()=>{bpmR.current=bpm;},[bpm]);
-  const soundOnR      =useRef(settings.sound);
-  const timelineR     =useRef(timeline);
-  const timeSigR      =useRef(song.timeSig);
-  const groupingR     =useRef(song.grouping);
+  const soundOnR=useRef(settings.sound);
+  const timelineR=useRef(timeline);
+  const timeSigR=useRef(song.timeSig);
+  const groupingR=useRef(song.grouping);
   const expectedEntryR=useRef(null);
-  const isSilentR     =useRef(true);
-  const lastOnsetR    =useRef(0);
-  const sensitivityR  =useRef(sensitivity);
-  const micStreamR    =useRef(null);
-  const analyserR     =useRef(null);
-  const micRafR       =useRef(null);
-  const frameR        =useRef(0);
+  const isSilentR=useRef(true);
+  const lastOnsetR=useRef(0);
+  const sensitivityR=useRef(sensitivity);
+  const micStreamR=useRef(null);
+  const analyserR=useRef(null);
+  const micRafR=useRef(null);
+  const frameR=useRef(0);
   const feedbackTimerR=useRef(null);
-  const missedTimerR  =useRef(null);
-
+  const missedTimerR=useRef(null);
   useEffect(()=>{sensitivityR.current=sensitivity;},[sensitivity]);
 
-
-
-/* ── Scheduler ─────────────────────────────────────────────── */
   const schedule=useCallback(()=>{
     const ctx=ctxRef.current;
     if(!ctx||!playingR.current||isPausedR.current) return;
     const tot=timeSigR.current;
-    const tl =timelineR.current;
-
+    const tl=timelineR.current;
     while(nextT.current<ctx.currentTime+0.1){
       const bi=beatR.current, mi=measR.current;
-
-      if(mi>=tl.length){
-        setTimeout(()=>{playingR.current=false;setSongEnded(true);},0);
-        return;
-      }
-
+      if(mi>=tl.length){setTimeout(()=>{playingR.current=false;setSongEnded(true);},0);return;}
       const entry=tl[mi];
-      const grp  =groupingR.current;
-      const gs   =getGroupStarts(grp);
-      const t    =nextT.current;
-
-      const isGS       =gs.has(bi);
-      const nextEntry  =tl[mi+1];
-      const isReady    =bi===tot-1 && nextEntry?.expectEntry===true;
-      const isVerseStart=bi===0 && entry.expectEntry;
-
-      // Accent on beats 1, 3, 5 (index 0, 2, 4)
+      const grp=groupingR.current;
+      const gs=getGroupStarts(grp);
+      const t=nextT.current;
+      const isGS=gs.has(bi);
+      const nextEntry=tl[mi+1];
+      const isReady=bi===tot-1&&nextEntry?.expectEntry===true;
+      const isVerseStart=bi===0&&entry.expectEntry;
       const type=gs.has(bi)?'accent':'soft';
-
       if(soundOnR.current) playClick(ctx,type,t);
       if(isVerseStart){
         expectedEntryR.current=t;
-        // Window = 2.5 eighth notes after expected time
-        const windowMs=(30/bpmR.current)*2.5*1000; // 2.5 measures
+        const windowMs=(30/bpmR.current)*2.5*1000;
         const entryDelay=Math.max(0,(t-ctx.currentTime)*1000)+windowMs;
         clearTimeout(missedTimerR.current);
         missedTimerR.current=setTimeout(()=>{
           if(expectedEntryR.current!==null&&playingR.current&&!isPausedR.current){
-            // Entry window passed with no onset detected
             expectedEntryR.current=null;
             const fb={res:'missed',ms:null,id:Date.now()};
             setLastFeedback(fb);
             setFeedbackHist(h=>[fb,...h].slice(0,8));
-            // auto-hide
             clearTimeout(feedbackTimerR.current);
             feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
           }
         },entryDelay);
       }
-
       const delay=Math.max(0,(t-ctx.currentTime)*1000);
       setTimeout(()=>{
         if(!playingR.current) return;
@@ -613,14 +429,12 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
         }
         if(isReady) setSignal('ready');
       },delay);
-
       nextT.current+=30/bpmR.current;
       beatR.current=(bi+1)%tot;
       if(beatR.current===0) measR.current+=1;
     }
   },[]);
 
-  /* ── Start / stop ──────────────────────────────────────────── */
   useEffect(()=>{
     ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
     playingR.current=true;
@@ -628,49 +442,25 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     nextT.current=ctxRef.current.currentTime+0.1;
     intRef.current=setInterval(schedule,20);
     if(settings.voice) enableMic();
-    return()=>{
-      playingR.current=false;
-      clearInterval(intRef.current);
-      stopMic();
-    };
+    return()=>{playingR.current=false;clearInterval(intRef.current);stopMic();};
   },[schedule]);
 
-  useEffect(()=>{
-    if(signal==='go'){
-      const t=setTimeout(()=>setSignal(null),950);
-      return()=>clearTimeout(t);
-    }
-  },[signal]);
+  useEffect(()=>{if(signal==='go'){const t=setTimeout(()=>setSignal(null),950);return()=>clearTimeout(t);}},[signal]);
 
-  /* ── Pause / resume ────────────────────────────────────────── */
   const togglePause=useCallback(()=>{
-    if(!isPausedR.current){
-      isPausedR.current=true;
-      setIsPaused(true);
-      setActiveBeat(-1);
-      setSignal(null);
-    } else {
-      isPausedR.current=false;
-      setIsPaused(false);
-      nextT.current=ctxRef.current.currentTime+0.12;
-      beatR.current=0;
-    }
+    if(!isPausedR.current){isPausedR.current=true;setIsPaused(true);setActiveBeat(-1);setSignal(null);}
+    else{isPausedR.current=false;setIsPaused(false);nextT.current=ctxRef.current.currentTime+0.12;beatR.current=0;}
   },[]);
 
-  /* ── Skip verse ────────────────────────────────────────────── */
   const skipVerse=useCallback((dir)=>{
     const tl=timelineR.current;
     const cur=measR.current;
     let target=-1;
-    if(dir>0){
-      for(let i=cur+1;i<tl.length;i++){
-        if(tl[i].expectEntry){target=i;break;}
-      }
-    } else {
-      // Go to start of current verse line, or previous one
+    if(dir>0){for(let i=cur+1;i<tl.length;i++){if(tl[i].expectEntry){target=i;break;}}}
+    else{
       const curLineStart=tl.slice(0,cur+1).map((e,i)=>({e,i})).filter(x=>x.e.type==='verse'&&x.e.expectEntry).slice(-1)[0]?.i??0;
-      const prevStart  =tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
-      target = cur===curLineStart ? prevStart : curLineStart;
+      const prevStart=tl.slice(0,curLineStart).map((e,i)=>({e,i})).filter(x=>x.e.expectEntry).slice(-1)[0]?.i??0;
+      target=cur===curLineStart?prevStart:curLineStart;
     }
     if(target<0) return;
     measR.current=target;
@@ -679,12 +469,9 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     setCurrentEntry({...tl[target]});
     setActiveBeat(-1);
     setSignal(null);
-    if(!isPausedR.current){
-      nextT.current=ctxRef.current.currentTime+0.12;
-    }
+    if(!isPausedR.current) nextT.current=ctxRef.current.currentTime+0.12;
   },[]);
 
-  /* ── Mic ───────────────────────────────────────────────────── */
   const startMicLoop=useCallback(()=>{
     const analyser=analyserR.current,ctx=ctxRef.current;
     if(!analyser||!ctx) return;
@@ -713,9 +500,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
             feedbackTimerR.current=setTimeout(()=>setLastFeedback(null),2500);
           }
         }
-      }else if(!isSilentR.current&&rms<thr*0.45){
-        isSilentR.current=true;
-      }
+      }else if(!isSilentR.current&&rms<thr*0.45) isSilentR.current=true;
     };
     loop();
   },[]);
@@ -730,13 +515,7 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
       micStreamR.current=stream; analyserR.current=analyser;
       setMicOn(true); startMicLoop();
     }catch(err){
-      const msgs={
-        NotAllowedError:'Dostęp zablokowany — kliknij 🔒 obok adresu i zezwól na mikrofon.',
-        NotFoundError:'Nie znaleziono mikrofonu — sprawdź podłączenie.',
-        NotReadableError:'Mikrofon zajęty przez inną aplikację.',
-        SecurityError:'Strona musi działać przez HTTPS.',
-        NotSupportedError:'Przeglądarka nie obsługuje mikrofonu — użyj Chrome/Firefox.',
-      };
+      const msgs={NotAllowedError:'Dostęp zablokowany — kliknij 🔒 obok adresu i zezwól na mikrofon.',NotFoundError:'Nie znaleziono mikrofonu — sprawdź podłączenie.',NotReadableError:'Mikrofon zajęty przez inną aplikację.',SecurityError:'Strona musi działać przez HTTPS.',NotSupportedError:'Przeglądarka nie obsługuje mikrofonu — użyj Chrome/Firefox.'};
       setMicError(msgs[err.name]||`Błąd: ${err.name}`);
     }
   };
@@ -747,61 +526,41 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     micStreamR.current=null; analyserR.current=null;
   };
 
-  /* ── Derived ───────────────────────────────────────────────── */
   const fbColor=r=>({perfect:'#2E9B58',good:'#BF9A20',early:'#C0402A',late:'#C0402A',missed:'#C0402A'})[r]||'#999';
   const fbLabel=r=>({perfect:'Idealnie!',good:'Dobrze',early:'Za wcześnie',late:'Za późno',missed:'Ups, przegapione wejście'})[r]||'';
 
-  /* Lyrics display info */
   const lyricsInfo=useMemo(()=>{
     if(!currentEntry||currentEntry.type!=='verse') return null;
     const{segments,currentSeg,currentPart,section:si,line:li}=currentEntry;
     const secs=song.sections;
     const lines=secs[si].lines[0];
     const isLastLine=li===lines.length-1;
-    let nextSegs=null;
-    let nextIsDrumSolo=false;
-    if(isLastLine&&(secs[si].pauseAfter||0)>0){
-      nextIsDrumSolo=true;
-    } else if(li+1<lines.length){
-      nextSegs=lines[li+1];
-    } else if(si+1<secs.length){
-      nextSegs=secs[si+1].lines[0][0];
-    }
+    let nextSegs=null, nextIsDrumSolo=false;
+    if(isLastLine&&(secs[si].pauseAfter||0)>0) nextIsDrumSolo=true;
+    else if(li+1<lines.length) nextSegs=lines[li+1];
+    else if(si+1<secs.length) nextSegs=secs[si+1].lines[0][0];
     let prevSegs=null;
     if(li>0) prevSegs=lines[li-1];
-    else if(si>0){
-      const prevLines=secs[si-1].lines[0];
-      prevSegs=prevLines[prevLines.length-1];
-    }
+    else if(si>0){const prevLines=secs[si-1].lines[0];prevSegs=prevLines[prevLines.length-1];}
     return{segments,currentSeg,currentPart,nextSegs,nextIsDrumSolo,prevSegs};
   },[currentEntry,song.sections]);
 
-  /* Preview during intro/pause: first line of next section */
   const previewSegs=useMemo(()=>{
     const first=song.sections?.[0]?.lines?.[0]?.[0]||[];
     if(!currentEntry) return first;
-    if(currentEntry.type==='pause'){
-      const nextSi=currentEntry.section+1;
-      return song.sections?.[nextSi]?.lines?.[0]?.[0]||first;
-    }
+    if(currentEntry.type==='pause'){const nextSi=currentEntry.section+1;return song.sections?.[nextSi]?.lines?.[0]?.[0]||first;}
     return first;
   },[currentEntry,song.sections]);
 
-  /* ── Auto-size lyric line to always fit one row ── */
   const lyricRef=useRef(null);
-  const lyricKey=lyricsInfo?lyricsInfo.segments.join('|'):'drum';
   useLayoutEffect(()=>{
     const el=lyricRef.current;
     if(!el) return;
     const MAX=24, MIN=10;
-    // Always reset to MAX first — React may have cleared inline fontSize
     el.style.fontSize=MAX+'px';
     let size=MAX;
-    while(el.scrollWidth>el.offsetWidth+1&&size>MIN){
-      size-=0.5;
-      el.style.fontSize=size+'px';
-    }
-  }); // no deps: runs after every render so React can never override our value
+    while(el.scrollWidth>el.offsetWidth+1&&size>MIN){size-=0.5;el.style.fontSize=size+'px';}
+  });
 
   const phaseTag=useMemo(()=>{
     if(!currentEntry) return '';
@@ -810,851 +569,89 @@ function PlayingScreen({song,settings,bpm:initBpm,onStop,onRestart}){
     return currentEntry.sectionLabel||'';
   },[currentEntry]);
 
-  /* ── End screen ────────────────────────────────────────────── */
   if(songEnded) return(
-    <div style={{
-      minHeight:'100vh',display:'flex',flexDirection:'column',
-      alignItems:'center',justifyContent:'center',
-      padding:'40px 28px',textAlign:'center',
-    }}>
-      <div style={{fontSize:'3rem',marginBottom:'20px',lineHeight:1}}>🎵</div>
-      <h2 style={{
-        fontFamily:'Syne,sans-serif',fontWeight:800,
-        fontSize:'2.2rem',color:'#3B1505',marginBottom:'8px',letterSpacing:'-0.02em',
-      }}>Koniec!</h2>
-      <p style={{color:'#BBB',fontSize:'0.875rem',marginBottom:'36px'}}>
-        {song.name}
-      </p>
-      <div style={{display:'flex',flexDirection:'column',gap:'12px',width:'100%',maxWidth:'280px'}}>
-        <button
-          onClick={onRestart}
-          style={{
-            padding:'17px',background:'#1a1a1a',color:'#fff',
-            borderRadius:'12px',fontSize:'1rem',fontWeight:'700',
-            fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer',
-          }}
-        >
-          Powtórz piosenkę
-        </button>
-        <button
-          onClick={onStop}
-          style={{
-            padding:'17px',background:'transparent',color:'#888',
-            border:'1.5px solid #E0DDD7',
-            borderRadius:'12px',fontSize:'1rem',fontWeight:'600',
-            fontFamily:'DM Sans,sans-serif',cursor:'pointer',
-          }}
-        >
-          Powrót do menu
-        </button>
-      </div>
-    </div>
-  );
-
-  /* ── Playing UI ────────────────────────────────────────────── */
-  const badgeBg   = phaseTag==='Drum solo!'?'#C8E8F5':'#C8E8F5';
-  const badgeColor= phaseTag==='Drum solo!'?'#1D6A8E':'#1D6A8E';
-
-  return(
-    <div style={{
-      minHeight:'100vh',display:'flex',flexDirection:'column',
-      padding:'20px 20px 28px',background:'#fff',
-    }}>
-
-      {/* ── Top bar ── */}
-      <div style={{
-        display:'flex',alignItems:'center',justifyContent:'space-between',
-        marginBottom:'20px',gap:'12px',minWidth:0,
-      }}>
-        <div style={{minWidth:0,flex:1,overflow:'hidden'}}>
-          <div style={{
-            fontFamily:'DM Sans,sans-serif',fontWeight:'600',
-            fontSize:'0.78rem',color:'#AAA',
-            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
-          }}>Pomocnik rymiczny</div>
-          <div style={{
-            fontFamily:'Syne,sans-serif',fontWeight:700,
-            fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',
-            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
-          }}>{song.name}</div>
-        </div>
-        <button onClick={onStop} style={{
-          flexShrink:0,padding:'8px 18px',
-          border:'1.5px solid #E0DDD7',borderRadius:'10px',
-          fontSize:'0.85rem',fontWeight:'600',color:'#666',
-          fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',
-          background:'#fff',
-        }}>Stop</button>
-      </div>
-
-      {/* ── Main card ── */}
-      <div style={{
-        background:'#F2F0EC',borderRadius:'20px',
-        padding:'24px 20px 20px',
-        marginBottom:'20px',
-        flex:1,display:'flex',flexDirection:'column',
-        opacity:isPaused?0.7:1,transition:'opacity 0.2s',
-      }}>
-
-        {/* Badge — hidden during drum solo */}
-        {(isPaused||phaseTag!=='Drum solo!')&&(
-          <div style={{textAlign:'center',marginBottom:'16px'}}>
-            <span style={{
-              display:'inline-block',padding:'5px 16px',borderRadius:'30px',
-              background:'#C8E8F5',
-              fontSize:'0.72rem',fontWeight:'800',
-              color:'#1D6A8E',
-              letterSpacing:'0.1em',textTransform:'uppercase',
-            }}>
-              {isPaused?'PAUZA':phaseTag}
-            </span>
-          </div>
-        )}
-        {/* Spacer to keep layout stable when badge is hidden */}
-        {!isPaused&&phaseTag==='Drum solo!'&&<div style={{marginBottom:'16px'}}/>}
-
-        {/* Signal */}
-        <div style={{
-          textAlign:'center',minHeight:'28px',marginBottom:'12px',
-          display:'flex',alignItems:'center',justifyContent:'center',
-        }}>
-          {!isPaused&&signal==='ready'&&(
-            <span style={{fontSize:'0.82rem',color:'#B0A89E',letterSpacing:'0.08em'}}>za chwilę…</span>
-          )}
-          {!isPaused&&signal==='go'&&(
-            <span style={{
-              fontFamily:'Syne,sans-serif',fontWeight:800,
-              fontSize:'1.4rem',color:'#3B1505',letterSpacing:'0.04em',
-              animation:'pulseRing 0.5s ease',display:'inline-block',
-            }}>TERAZ!</span>
-          )}
-        </div>
-
-        {/* Lyrics */}
-        {settings.text&&(
-          <div style={{
-            textAlign:'center',
-            flex:1,display:'flex',flexDirection:'column',
-            justifyContent:'center',marginBottom:'20px',minHeight:'100px',
-            padding:'0 16px',
-          }}>
-            {lyricsInfo?(
-              <>
-                {/* Previous line */}
-                {lyricsInfo.prevSegs?(
-                  <p style={{margin:'0 0 16px',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
-                    {lyricsInfo.prevSegs.map((seg,i)=>{
-                      const parts=seg.split('|');
-                      return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);
-                    })}
-                  </p>
-                ):<div style={{marginBottom:'16px'}}/>}
-
-                {/* Current line */}
-                <p ref={lyricRef} style={{
-                  margin:'0 0 16px',lineHeight:'2',
-                  padding:'6px 0',borderRadius:'10px',
-                  whiteSpace:'nowrap',overflow:'hidden',
-                  background:signal==='go'?'#DEEEF9':'transparent',
-                  transition:'background 0.3s',
-                  animation:'lyricSlide 0.2s ease',
-                }}>
-                  {lyricsInfo.segments.map((seg,i)=>{
-                    // Split on | preserving space info: space before/after | = word boundary
-                    const rawParts=seg.split('|');
-                    return(
-                      <React.Fragment key={i}>
-                        {i>0&&' '}
-                        {rawParts.map((part,pi)=>{
-                          const isCurPart=i===lyricsInfo.currentSeg&&pi===lyricsInfo.currentPart;
-                          // Space before this part if prev ended with space OR this starts with space
-                          const prevPart=rawParts[pi-1]||'';
-                          const needsSpace=pi>0&&(prevPart.endsWith(' ')||part.startsWith(' '));
-                          const trimmed=part.trim();
-                          return(
-                            <React.Fragment key={pi}>
-                              {(i>0&&pi===0)&&' '}
-                              {pi>0&&needsSpace&&' '}
-                              <span style={{display:'inline-block',borderBottom:isCurPart?'2.5px solid #1D6A8E':'2.5px solid transparent',paddingBottom:'1px',transition:'border-color 0.15s'}}>
-                                <span style={{background:'#C8E8F5',borderRadius:'2px',padding:'0 2px',fontWeight:'700'}}>{trimmed[0]}</span><span style={{color:'#1a1a1a'}}>{trimmed.slice(1)}</span>
-                              </span>
-                            </React.Fragment>
-                          );
-                        })}
-                      </React.Fragment>
-                    );
-                  })}
-                </p>
-                {/* Next line preview */}
-                {lyricsInfo.nextSegs&&(
-                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
-                    {lyricsInfo.nextSegs.map((seg,i)=>{
-                      const parts=seg.split('|');
-                      return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);
-                    })}
-                  </p>
-                )}
-                {/* Drum solo coming up */}
-                {lyricsInfo.nextIsDrumSolo&&(
-                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8',fontStyle:'italic'}}>
-                    Drum solo!
-                  </p>
-                )}
-              </>
-            ):(
-              <>
-                {/* Drum solo — main text with underline like active siódemka */}
-                <p ref={lyricRef} style={{
-                  margin:'0 0 16px',lineHeight:'2',
-                  padding:'6px 0',whiteSpace:'nowrap',overflow:'hidden',
-                  animation:'lyricSlide 0.2s ease',
-                }}>
-                  <span style={{
-                    display:'inline-block',
-                    color:'#1a1a1a',
-                    borderBottom:'2.5px solid #1D6A8E',
-                    paddingBottom:'1px',
-                  }}>Drum solo!</span>
-                </p>
-                {/* Next stanza first line as preview */}
-                {previewSegs.length>0&&(
-                  <p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>
-                    {previewSegs.map((seg,i)=>{
-                      const parts=seg.split('|');
-                      return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);
-                    })}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        )}
-        {!settings.text&&<div style={{flex:1}}/>}
-
-        {/* Beat row */}
-        {settings.visual&&(
-          <div style={{marginBottom:'16px'}}>
-            <BeatRow
-              timeSig={song.timeSig}
-              grouping={song.grouping}
-              activeBeat={isPaused?-1:activeBeat}
-              noAccent={phaseTag==='Drum solo!'&&!isPaused}
-            />
-          </div>
-        )}
-
-        {/* Feedback — fixed height slot so controls don't jump */}
-        <div style={{
-          height:'36px',marginBottom:'16px',
-          display:'flex',alignItems:'center',justifyContent:'center',
-        }}>
-          {lastFeedback&&(
-            <div key={lastFeedback.id} style={{
-              display:'flex',alignItems:'center',gap:'10px',
-              animation:'popIn 0.18s ease',
-            }}>
-              <span style={{
-                fontWeight:'700',fontSize:'0.9rem',
-                color:fbColor(lastFeedback.res),
-              }}>
-                {fbLabel(lastFeedback.res)}
-              </span>
-              {lastFeedback.ms!==null&&(
-                <span style={{fontFamily:'monospace',fontSize:'0.72rem',color:'#B0A89E'}}>
-                  {lastFeedback.ms>0?'+':''}{lastFeedback.ms} ms
-                </span>
-              )}
-              <div style={{display:'flex',gap:'3px',alignItems:'center'}}>
-                {feedbackHist.slice(0,6).map(h=>(
-                  <div key={h.id} style={{
-                    width:'6px',height:'6px',borderRadius:'50%',
-                    background:fbColor(h.res),opacity:0.7,
-                  }}/>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Player controls */}
-        <div style={{
-          display:'flex',alignItems:'center',justifyContent:'center',
-          gap:'16px',
-        }}>
-          <button onClick={()=>skipVerse(-1)} title="Wers wstecz" style={{
-            width:'48px',height:'48px',borderRadius:'50%',border:'none',
-            background:'#E5E2DC',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            color:'#666',fontSize:'1.1rem',
-            transition:'background 0.15s',
-          }}>⏮</button>
-
-          <button onClick={togglePause} style={{
-            width:'72px',height:'72px',borderRadius:'50%',border:'none',
-            background:'#1a1a1a',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            boxShadow:'0 4px 16px rgba(0,0,0,0.2)',
-            transition:'transform 0.15s',
-          }}
-            onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
-          >
-            {isPaused?(
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-            ):(
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            )}
-          </button>
-
-          <button onClick={()=>skipVerse(1)} title="Wers wprzód" style={{
-            width:'48px',height:'48px',borderRadius:'50%',border:'none',
-            background:'#E5E2DC',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            color:'#666',fontSize:'1.1rem',
-            transition:'background 0.15s',
-          }}>⏭</button>
-        </div>
-      </div>
-
-      {/* ── BPM control — outside card ── */}
-      <div style={{marginBottom:'16px'}}>{(()=>{
-        const MIN=40,MAX=220,STEP=10;
-        const defaultBpm=song.defaultBpm||80;
-        const defaultPct=(defaultBpm-MIN)/(MAX-MIN);
-        return(
-          <>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'6px'}}>
-              <span style={{fontSize:'0.72rem',color:'#AAA',letterSpacing:'0.05em'}}>Tempo</span>
-              <span style={{fontFamily:'monospace',fontSize:'0.8rem',color:'#888'}}>{bpm} BPM</span>
-            </div>
-            {/* Default BPM label above track */}
-            <div style={{position:'relative',marginBottom:'2px',height:'18px'}}>
-              <span style={{
-                position:'absolute',
-                left:`calc(22px + ${defaultPct} * (100% - 44px))`,
-                transform:'translateX(-50%)',
-                fontFamily:'monospace',fontSize:'0.78rem',fontWeight:'600',
-                color:'#AAAAAA',
-                whiteSpace:'nowrap',
-              }}>{defaultBpm}</span>
-            </div>
-            {/* Track with default tick overlay */}
-            <div style={{position:'relative'}}>
-              {/* Tick behind thumb */}
-              <div style={{
-                position:'absolute',
-                left:`calc(22px + ${defaultPct} * (100% - 44px))`,
-                top:'50%',
-                transform:'translate(-50%,-50%)',
-                width:'2px',height:'18px',
-                background:'#1a1a1a',
-                borderRadius:'1px',
-                pointerEvents:'none',
-                zIndex:0,
-              }}/>
-              <input type="range" min={MIN} max={MAX} step={STEP} value={bpm}
-                onChange={e=>setBpm(Number(e.target.value))}/>
-            </div>
-          </>
-        );
-      })()}</div>
-
-      {/* ── Mic panel — outside card ── */}
-      {settings.voice&&(
-        <div>
-          {micError&&(
-            <div style={{
-              padding:'10px 14px',marginBottom:'10px',
-              background:'#FEF5F4',border:'1px solid #FAD3CE',
-              borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5',
-            }}>⚠️ {micError}</div>
-          )}
-          {micOn&&(
-            <div style={{marginBottom:'8px'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'}}>
-                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}}/>
-                <span style={{fontSize:'0.72rem',color:'#AAA'}}>Mikrofon aktywny</span>
-              </div>
-              <div style={{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'}}>
-                <div style={{
-                  height:'100%',borderRadius:'2px',width:`${volume*100}%`,
-                  background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',
-                  transition:'width 0.05s,background 0.15s',
-                }}/>
-              </div>
-            </div>
-          )}
-          {micOn&&(
-            <div style={{marginBottom:'8px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
-                <span style={{fontSize:'0.68rem',color:'#CCC'}}>Czułość mikrofonu</span>
-                <span style={{fontFamily:'monospace',fontSize:'0.68rem',color:'#CCC'}}>{Math.round(sensitivity*1000)}</span>
-              </div>
-              <input type="range" min="5" max="80"
-                value={Math.round(sensitivity*1000)}
-                onChange={e=>setSensitivity(Number(e.target.value)/1000)}/>
-            </div>
-          )}
-
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-/* ─── PitchScreen ───────────────────────────────────────────── */
-const MIDI_MIN=57, MIDI_MAX=72;
-const NOTE_PL2=['C','C#','D','D#','E','F','F#','G','G#','A','A#','H'];
-function noteName(m){return NOTE_PL2[m%12]+Math.floor(m/12-1);}
-
-const ACH_DATA={
-  upper:[[0,650,59],[1022,371,61],[3715,2229,64],[8661,1022,66],[10263,2229,64],[13235,836,61],[16465,372,64],[17069,557,65],[18741,1672,64],[21156,1300,62],[24569,372,65],[25034,371,64],[25498,1115,62],[26798,1765,62],[30494,371,59],[31237,371,64],[32026,372,64],[32677,371,67],[33884,929,65],[36972,372,61],[39596,650,64],[40804,371,63],[41918,743,62],[42754,464,61],[43590,836,61]],
-  lower:[[209,371,59],[952,464,61],[1509,372,59],[2067,2322,64],[4574,1672,60],[7245,1021,64],[8731,929,64],[10124,371,61],[11517,2972,61],[15815,465,59],[17162,1208,61],[18834,371,61],[19391,2972,61],[22456,1649,62],[25498,372,62],[26055,2694,62],[30587,464,59],[32119,2044,64],[34813,743,62],[35649,371,61],[36113,372,62],[37321,557,61],[38946,464,61],[40061,464,62],[40618,1207,61],[41918,836,62],[42940,1114,62]],
-  totalMs:44426,
-  verseMarkers:[[0,'Ach merak miła majko pust merak'],[15700,'Toj szte me miła majko umori'],[30490,'Toj szte me żiwa w groba zarowi']],
-};
-
-function PitchScreen({song,settings,onStop}){
-  const[voiceChoice,setVoiceChoice]=useState(null);
-  const[bgAudio,    setBgAudio    ]=useState('none');
-  const[phase,      setPhase      ]=useState('setup');
-  const[isPaused,   setIsPaused   ]=useState(false);
-  const[playbackT,  setPlaybackT  ]=useState(0);
-  const[liveMidi,   setLiveMidi   ]=useState(null);
-  const[micError,   setMicError   ]=useState(null);
-  const[micOn,      setMicOn      ]=useState(false);
-  const[volume,     setVolume     ]=useState(0);
-  const[sensitivity,setSensitivity]=useState(0.03);
-
-  const audioRef    =useRef(null);
-  const ctxRef      =useRef(null);
-  const analyserRef =useRef(null);
-  const micStreamRef=useRef(null);
-  const micRafRef   =useRef(null);
-  const rafRef      =useRef(null);
-  const staffRef=useRef(null);
-  const startWallT  =useRef(null);   // performance.now() when playback began
-  const pausedAtT   =useRef(0);      // ms when paused
-  const sensitivityR=useRef(sensitivity);
-  useEffect(()=>{sensitivityR.current=sensitivity;},[sensitivity]);
-
-  const data=ACH_DATA;
-  const targetBlocks=voiceChoice?data[voiceChoice]:[];
-  const otherBlocks =voiceChoice?data[voiceChoice==='upper'?'lower':'upper']:[];
-
-  /* ── current verse label ── */
-  const verseLabel=useMemo(()=>{
-    const ms=playbackT*1000;
-    let label=data.verseMarkers[0][1];
-    for(const[t,txt] of data.verseMarkers){ if(ms>=t) label=txt; }
-    return label;
-  },[playbackT]);
-
-  /* ── pitch detection ── */
-  function detectPitchAC(buf,sr){
-    const n=Math.min(buf.length,1024);
-    let rms=0; for(let i=0;i<n;i++) rms+=buf[i]*buf[i]; rms=Math.sqrt(rms/n);
-    if(rms<0.005) return null;
-    const minP=Math.floor(sr/1100),maxP=Math.ceil(sr/70);
-    let best=0,bestP=-1;
-    for(let p=minP;p<=maxP&&p<n;p++){
-      let num=0,d1=0,d2=0;
-      for(let i=0;i<n-p;i++){num+=buf[i]*buf[i+p];d1+=buf[i]*buf[i];d2+=buf[i+p]*buf[i+p];}
-      const c=Math.sqrt(d1*d2)>0?num/Math.sqrt(d1*d2):0;
-      if(c>best){best=c;bestP=p;}
-    }
-    if(bestP<1||best<0.82) return null;
-    return sr/bestP;
-  }
-
-  /* ── mic ── */
-  const startMic=useCallback(async()=>{
-    try{
-      if(!ctxRef.current) ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
-      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const src=ctxRef.current.createMediaStreamSource(stream);
-      const an=ctxRef.current.createAnalyser(); an.fftSize=2048;
-      src.connect(an);
-      micStreamRef.current=stream; analyserRef.current=an;
-      setMicOn(true);
-      const fb=new Float32Array(an.fftSize),bb=new Uint8Array(an.fftSize);
-      const loop=()=>{
-        micRafRef.current=requestAnimationFrame(loop);
-        an.getByteTimeDomainData(bb);
-        let s=0; for(let i=0;i<bb.length;i++){const v=(bb[i]-128)/128;s+=v*v;}
-        setVolume(Math.min(Math.sqrt(s/bb.length)*6,1));
-        an.getFloatTimeDomainData(fb);
-        const freq=detectPitchAC(fb,ctxRef.current.sampleRate);
-        setLiveMidi(freq&&freq>70&&freq<1100 ? 12*Math.log2(freq/440)+69 : null);
-      };
-      loop();
-    }catch(err){
-      const msgs={NotAllowedError:'Zezwól na mikrofon.',NotFoundError:'Nie znaleziono mikrofonu.'};
-      setMicError(msgs[err.name]||`Błąd: ${err.name}`);
-    }
-  },[]);
-
-  const stopMic=useCallback(()=>{
-    cancelAnimationFrame(micRafRef.current);
-    micStreamRef.current?.getTracks().forEach(t=>t.stop());
-    micStreamRef.current=null; analyserRef.current=null;
-    setMicOn(false); setLiveMidi(null); setVolume(0);
-  },[]);
-
-  useEffect(()=>()=>{stopMic(); cancelAnimationFrame(rafRef.current);},[]);
-
-
-
-  /* ── playback loop ── */
-  const startPlayback=useCallback((fromMs=0)=>{
-    cancelAnimationFrame(rafRef.current);
-    startWallT.current=performance.now()-fromMs;
-    const tick=()=>{
-      const t=(performance.now()-startWallT.current)/1000;
-      setPlaybackT(t);
-      if(t*1000<data.totalMs+500) rafRef.current=requestAnimationFrame(tick);
-      else setPhase('done');
-    };
-    rafRef.current=requestAnimationFrame(tick);
-    if(audioRef.current&&bgAudio!=='none'){
-      audioRef.current.currentTime=song.audioOffset+fromMs/1000;
-      audioRef.current.play().catch(()=>{});
-    }
-  },[bgAudio,song.audioOffset,data.totalMs]);
-
-  const handleStart=useCallback(async()=>{
-    setPhase('playing'); setPlaybackT(0); setIsPaused(false);
-    if(!micOn) await startMic();
-    startPlayback(0);
-  },[micOn,startMic,startPlayback]);
-
-  const togglePause=useCallback(()=>{
-    if(!isPaused){
-      cancelAnimationFrame(rafRef.current);
-      pausedAtT.current=playbackT*1000;
-      audioRef.current?.pause();
-      setIsPaused(true);
-    } else {
-      setIsPaused(false);
-      startPlayback(pausedAtT.current);
-    }
-  },[isPaused,playbackT,startPlayback]);
-
-  const skipToVerse=useCallback((dir)=>{
-    const ms=playbackT*1000;
-    const markers=data.verseMarkers;
-    let target=0;
-    if(dir>0){
-      const next=markers.find(([t])=>t>ms+500);
-      target=next?next[0]:data.totalMs;
-    } else {
-      const curIdx=markers.reduce((acc,[t],i)=>t<=ms?i:acc,0);
-      target=curIdx>0&&ms-markers[curIdx][0]<1500 ? markers[curIdx-1][0] : markers[curIdx][0];
-    }
-    pausedAtT.current=target;
-    if(!isPaused) startPlayback(target);
-    else setPlaybackT(target/1000);
-  },[playbackT,isPaused,startPlayback,data]);
-
-  /* ── SVG staff ── */
-  const staffSvg=useMemo(()=>{
-    const RANGE=MIDI_MAX-MIDI_MIN;
-    const WIN_MS=16000;
-    const tMs=playbackT*1000;
-    const PH_PCT=30; // playhead at 30% from left
-
-    // helpers — use % coordinates (viewBox 0 0 100 100)
-    const toX=(t)=>((t-tMs)/WIN_MS*100+PH_PCT);
-    const toY=(midi)=>(100-((midi-MIDI_MIN)/RANGE*100));
-    const rowH=100/RANGE;
-
-    const staffLines=[];
-    for(let m=MIDI_MIN;m<=MIDI_MAX;m+=2){
-      const y=toY(m);
-      staffLines.push(<line key={m} x1="0" y1={y} x2="100" y2={y} stroke="#EEEAE4" strokeWidth="0.3" vectorEffect="non-scaling-stroke"/>);
-    }
-
-    const labels=[];
-    for(let m=MIDI_MIN;m<=MIDI_MAX;m++){
-      if(m%2===0){
-        const y=toY(m+0.5);
-        labels.push(<text key={m} x="1" y={y+0.5} fontSize="2.2" fontFamily="monospace" fill="#C0BCB6" dominantBaseline="middle">{noteName(m)}</text>);
-      }
-    }
-
-    const verseDividers=data.verseMarkers.map(([vt],i)=>{
-      if(vt===0) return null;
-      const x=toX(vt);
-      if(x<0||x>100) return null;
-      return <line key={i} x1={x} y1="0" x2={x} y2="100" stroke="#DDDAD4" strokeWidth="0.3" strokeDasharray="1,1" vectorEffect="non-scaling-stroke"/>;
-    });
-
-    const makeBlocks=(blocks,color,opacity)=>blocks.map(([t,dur,midi],i)=>{
-      const x=toX(t);
-      const w=Math.max(dur/WIN_MS*100, 0.5);
-      const y=toY(midi+0.05);
-      const h=rowH*0.78;
-      if(x+w<0||x>100) return null;
-      return <rect key={i} x={x} y={y} width={w} height={h} rx="0.8" ry="0.8" fill={color} opacity={opacity}/>;
-    });
-
-    const otherColor=voiceChoice==='upper'?'#93C5D4':'#C4A0D4';
-    const mainColor =voiceChoice==='upper'?'#1D6A8E':'#7C3A9E';
-
-    let dotEl=null;
-    if(liveMidi!==null){
-      const dotY=toY(liveMidi+0.5);
-      let expMidi=null;
-      for(const[t,dur,m] of targetBlocks){ if(tMs>=t&&tMs<=t+dur){expMidi=m;break;} }
-      const diff=expMidi!==null?Math.abs(liveMidi-expMidi):99;
-      const col=diff<0.8?'#2E9B58':diff<1.5?'#F0C060':'#CC4444';
-      dotEl=<>
-        <circle cx={PH_PCT} cy={dotY} r="2.2" fill={col} opacity="0.25"/>
-        <circle cx={PH_PCT} cy={dotY} r="1.3" fill={col}/>
-      </>;
-    }
-
-    return(
-      <svg ref={staffRef} viewBox="0 0 100 100" preserveAspectRatio="none"
-        style={{width:'100%',height:'100%',display:'block',overflow:'visible'}}>
-        {staffLines}
-        {labels}
-        {verseDividers}
-        {bgAudio!=='none'&&makeBlocks(otherBlocks,otherColor,0.25)}
-        {makeBlocks(targetBlocks,mainColor,0.9)}
-        {/* Playhead */}
-        <line x1={PH_PCT} y1="0" x2={PH_PCT} y2="100" stroke="#1a1a1a" strokeWidth="0.4" opacity="0.35" vectorEffect="non-scaling-stroke"/>
-        {dotEl}
-      </svg>
-    );
-  },[playbackT,liveMidi,targetBlocks,otherBlocks,voiceChoice,bgAudio,data]);
-
-  /* ── feedback ── */
-  const feedbackLabel=useMemo(()=>{
-    if(liveMidi===null||phase!=='playing'||isPaused) return null;
-    const tMs=playbackT*1000;
-    let expMidi=null;
-    for(const[t,dur,m] of targetBlocks){ if(tMs>=t&&tMs<=t+dur){expMidi=m;break;} }
-    if(expMidi===null) return null;
-    const diff=liveMidi-expMidi;
-    if(Math.abs(diff)<0.8) return{label:'Czysto ✓',color:'#2E9B58'};
-    if(diff>1.5) return{label:'Za wysoko ↑',color:'#CC4444'};
-    if(diff<-1.5) return{label:'Za nisko ↓',color:'#3B8AB0'};
-    return{label:'Prawie!',color:'#F0C060'};
-  },[liveMidi,playbackT,targetBlocks,phase,isPaused]);
-
-  /* ─── SETUP ─── */
-  if(phase==='setup') return(
-    <div style={{padding:'32px 24px',minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'32px'}}>
-        <div>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:'0.78rem',color:'#AAA'}}>Pomocnik rymiczny</div>
-          <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1rem',color:'#3B1505'}}>
-            {song.name} <span style={{fontSize:'0.7rem',color:'#AAA',fontWeight:400}}>🔬 beta</span>
-          </div>
-        </div>
-        <button onClick={onStop} style={{padding:'7px 16px',border:'1.5px solid #E0DDD7',borderRadius:'8px',fontSize:'0.8rem',fontWeight:'600',color:'#888',fontFamily:'DM Sans,sans-serif'}}>Wróć</button>
-      </div>
-
-      <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.1rem',marginBottom:'20px'}}>Który głos ćwiczysz?</h2>
-      <div style={{display:'flex',gap:'12px',marginBottom:'32px'}}>
-        {[['upper','Górny'],['lower','Dolny']].map(([v,label])=>(
-          <button key={v} onClick={()=>setVoiceChoice(v)} style={{
-            flex:1,padding:'16px 8px',borderRadius:'12px',
-            fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1rem',cursor:'pointer',
-            background:voiceChoice===v?'#1a1a1a':'transparent',
-            color:voiceChoice===v?'#fff':'#888',
-            border:`1.5px solid ${voiceChoice===v?'#1a1a1a':'#E0DDD7'}`,
-          }}>{label}</button>
-        ))}
-      </div>
-
-      {voiceChoice&&(<>
-        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1.1rem',marginBottom:'20px'}}>Co słyszysz w tle?</h2>
-        <div style={{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'40px'}}>
-          {[['none','Cisza — tylko mój głos'],
-            ['chosen',`Nagranie głosu ${voiceChoice==='upper'?'górnego':'dolnego'}`],
-            ['both','Nagranie obu głosów']].map(([v,label])=>(
-            <button key={v} onClick={()=>setBgAudio(v)} style={{
-              padding:'14px 18px',borderRadius:'10px',textAlign:'left',cursor:'pointer',
-              fontFamily:'DM Sans,sans-serif',fontSize:'0.95rem',
-              background:bgAudio===v?'#F2F0EC':'transparent',
-              color:bgAudio===v?'#1a1a1a':'#888',
-              border:`1.5px solid ${bgAudio===v?'#D5D2CB':'#E0DDD7'}`,
-              fontWeight:bgAudio===v?'600':'400',
-            }}>{bgAudio===v?'● ':' '}{label}</button>
-          ))}
-        </div>
-        <div style={{flex:1}}/>
-        <button onClick={handleStart} style={{
-          width:'100%',padding:'18px',background:'#1a1a1a',color:'#fff',
-          borderRadius:'12px',fontSize:'1rem',fontWeight:'700',
-          fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer',
-        }}>Start</button>
-      </>)}
-    </div>
-  );
-
-  /* ─── DONE ─── */
-  if(phase==='done') return(
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 28px',textAlign:'center'}}>
-      <div style={{fontSize:'2.5rem',marginBottom:'16px'}}>🎵</div>
-      <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'2rem',color:'#3B1505',marginBottom:'24px'}}>Brawo!</h2>
+      <div style={{fontSize:'3rem',marginBottom:'20px',lineHeight:1}}>🎵</div>
+      <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'2.2rem',color:'#3B1505',marginBottom:'8px',letterSpacing:'-0.02em'}}>Koniec!</h2>
+      <p style={{color:'#BBB',fontSize:'0.875rem',marginBottom:'36px'}}>{song.name}</p>
       <div style={{display:'flex',flexDirection:'column',gap:'12px',width:'100%',maxWidth:'280px'}}>
-        <button onClick={()=>{setPhase('playing');setIsPaused(false);startPlayback(0);}} style={{padding:'16px',background:'#1a1a1a',color:'#fff',borderRadius:'12px',fontSize:'0.95rem',fontWeight:'700',fontFamily:'Syne,sans-serif',cursor:'pointer'}}>Zacznij od nowa</button>
-        <button onClick={onStop} style={{padding:'16px',background:'transparent',color:'#888',border:'1.5px solid #E0DDD7',borderRadius:'12px',fontSize:'0.95rem',fontFamily:'DM Sans,sans-serif',cursor:'pointer'}}>Powrót do menu</button>
+        <button onClick={onRestart} style={{padding:'17px',background:'#1a1a1a',color:'#fff',borderRadius:'12px',fontSize:'1rem',fontWeight:'700',fontFamily:'Syne,sans-serif',letterSpacing:'0.04em',cursor:'pointer'}}>Powtórz piosenkę</button>
+        <button onClick={onStop} style={{padding:'17px',background:'transparent',color:'#888',border:'1.5px solid #E0DDD7',borderRadius:'12px',fontSize:'1rem',fontWeight:'600',fontFamily:'DM Sans,sans-serif',cursor:'pointer'}}>Powrót do menu</button>
       </div>
     </div>
   );
 
-  /* ─── PLAYING ─── */
   return(
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',padding:'16px 20px 24px',background:'#fff',overflow:'hidden'}}>
-      <audio ref={audioRef} src={bgAudio==='none'?undefined:bgAudio==='chosen'?song.audioFiles[voiceChoice]:song.audioFiles.both} style={{display:'none'}}/>
-
-      {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px',gap:'12px'}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'20px 20px 28px',background:'#fff'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px',gap:'12px',minWidth:0}}>
         <div style={{minWidth:0,flex:1,overflow:'hidden'}}>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontWeight:'600',fontSize:'0.78rem',color:'#AAA'}}>
-            Głos {voiceChoice==='upper'?'górny':'dolny'}
-          </div>
-          <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'0.95rem',color:'#3B1505',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-            {song.name}
-          </div>
+          <div style={{fontFamily:'DM Sans,sans-serif',fontWeight:'600',fontSize:'0.78rem',color:'#AAA',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Pomocnik rymiczny</div>
+          <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'0.95rem',color:'#3B1505',marginTop:'1px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{song.name}</div>
         </div>
-        <button onClick={()=>{cancelAnimationFrame(rafRef.current);audioRef.current?.pause();stopMic();onStop();}} style={{flexShrink:0,padding:'7px 16px',border:'1.5px solid #E0DDD7',borderRadius:'8px',fontSize:'0.8rem',fontWeight:'600',color:'#888',fontFamily:'DM Sans,sans-serif'}}>Stop</button>
+        <button onClick={onStop} style={{flexShrink:0,padding:'8px 18px',border:'1.5px solid #E0DDD7',borderRadius:'10px',fontSize:'0.85rem',fontWeight:'600',color:'#666',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap',background:'#fff'}}>Stop</button>
       </div>
-
-      {/* Main card */}
-      <div style={{background:'#F2F0EC',borderRadius:'20px',padding:'14px 16px 16px',marginBottom:'12px',flex:1,display:'flex',flexDirection:'column',opacity:isPaused?0.6:1,transition:'opacity 0.2s'}}>
-
-        {/* Verse text — same style as lyrics in rhythm songs */}
-        <p style={{
-          margin:'0 0 12px',lineHeight:'1.6',textAlign:'center',
-          fontSize:'clamp(0.9rem,3.5vw,1.1rem)',fontWeight:'600',
-          color:'#1a1a1a',padding:'4px 8px',borderRadius:'8px',
-          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
-          animation:'lyricSlide 0.2s ease',
-        }}>{verseLabel}</p>
-
-        {/* Staff (SVG) */}
-        <div style={{flex:1,borderRadius:'10px',overflow:'hidden',background:'#fff',minHeight:'120px'}}>
-          {staffSvg}
+      <div style={{background:'#F2F0EC',borderRadius:'20px',padding:'24px 20px 20px',marginBottom:'20px',flex:1,display:'flex',flexDirection:'column',opacity:isPaused?0.7:1,transition:'opacity 0.2s'}}>
+        {(isPaused||phaseTag!=='Drum solo!')&&(<div style={{textAlign:'center',marginBottom:'16px'}}><span style={{display:'inline-block',padding:'5px 16px',borderRadius:'30px',background:'#C8E8F5',fontSize:'0.72rem',fontWeight:'800',color:'#1D6A8E',letterSpacing:'0.1em',textTransform:'uppercase'}}>{isPaused?'PAUZA':phaseTag}</span></div>)}
+        {!isPaused&&phaseTag==='Drum solo!'&&<div style={{marginBottom:'16px'}}/>}
+        <div style={{textAlign:'center',minHeight:'28px',marginBottom:'12px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {!isPaused&&signal==='ready'&&(<span style={{fontSize:'0.82rem',color:'#B0A89E',letterSpacing:'0.08em'}}>za chwilę…</span>)}
+          {!isPaused&&signal==='go'&&(<span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'1.4rem',color:'#3B1505',letterSpacing:'0.04em',animation:'pulseRing 0.5s ease',display:'inline-block'}}>TERAZ!</span>)}
         </div>
-
-        {/* Controls — same style as rhythm songs */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'16px',marginTop:'14px'}}>
-          <button onClick={()=>skipToVerse(-1)} style={{
-            width:'48px',height:'48px',borderRadius:'50%',border:'none',
-            background:'#E5E2DC',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:'1.1rem',color:'#666',
-          }}>⏮</button>
-          <button onClick={togglePause} style={{
-            width:'72px',height:'72px',borderRadius:'50%',border:'none',
-            background:'#1a1a1a',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            boxShadow:'0 4px 16px rgba(0,0,0,0.2)',transition:'transform 0.15s',
-          }}
-            onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
-          >
-            {isPaused
-              ?<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-              :<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>}
-          </button>
-          <button onClick={()=>skipToVerse(1)} style={{
-            width:'48px',height:'48px',borderRadius:'50%',border:'none',
-            background:'#E5E2DC',cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:'1.1rem',color:'#666',
-          }}>⏭</button>
-        </div>
-      </div>
-
-      {/* Feedback */}
-      <div style={{height:'28px',marginBottom:'8px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        {feedbackLabel
-          ?<span style={{fontWeight:'700',fontSize:'0.95rem',color:feedbackLabel.color,animation:'popIn 0.15s ease'}}>{feedbackLabel.label}</span>
-          :<span/>}
-        <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
-            <div style={{width:'10px',height:'10px',borderRadius:'2px',background:voiceChoice==='upper'?'#1D6A8E':'#7C3A9E',opacity:0.9}}/>
-            <span style={{fontSize:'0.62rem',color:'#AAA'}}>{voiceChoice==='upper'?'Górny':'Dolny'}</span>
-          </div>
-          {bgAudio!=='none'&&(
-            <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
-              <div style={{width:'10px',height:'10px',borderRadius:'2px',background:voiceChoice==='upper'?'#93C5D4':'#C4A0D4',opacity:0.35}}/>
-              <span style={{fontSize:'0.62rem',color:'#AAA'}}>{voiceChoice==='upper'?'Dolny':'Górny'}</span>
+        {settings.text&&(<div style={{textAlign:'center',flex:1,display:'flex',flexDirection:'column',justifyContent:'center',marginBottom:'20px',minHeight:'100px',padding:'0 16px'}}>
+          {lyricsInfo?(<>
+            {lyricsInfo.prevSegs?(<p style={{margin:'0 0 16px',fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>{lyricsInfo.prevSegs.map((seg,i)=>{const parts=seg.split('|');return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);})}</p>):(<div style={{marginBottom:'16px'}}/>)}
+            <p ref={lyricRef} style={{margin:'0 0 16px',lineHeight:'2',padding:'6px 0',borderRadius:'10px',whiteSpace:'nowrap',overflow:'hidden',background:signal==='go'?'#DEEEF9':'transparent',transition:'background 0.3s',animation:'lyricSlide 0.2s ease'}}>
+              {lyricsInfo.segments.map((seg,i)=>{const rawParts=seg.split('|');return(<React.Fragment key={i}>{i>0&&' '}{rawParts.map((part,pi)=>{const isCurPart=i===lyricsInfo.currentSeg&&pi===lyricsInfo.currentPart;const prevPart=rawParts[pi-1]||'';const needsSpace=pi>0&&(prevPart.endsWith(' ')||part.startsWith(' '));const trimmed=part.trim();return(<React.Fragment key={pi}>{(i>0&&pi===0)&&' '}{pi>0&&needsSpace&&' '}<span style={{display:'inline-block',borderBottom:isCurPart?'2.5px solid #1D6A8E':'2.5px solid transparent',paddingBottom:'1px',transition:'border-color 0.15s'}}><span style={{background:'#C8E8F5',borderRadius:'2px',padding:'0 2px',fontWeight:'700'}}>{trimmed[0]}</span><span style={{color:'#1a1a1a'}}>{trimmed.slice(1)}</span></span></React.Fragment>);})}</React.Fragment>);})}
+            </p>
+            {lyricsInfo.nextSegs&&(<p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>{lyricsInfo.nextSegs.map((seg,i)=>{const parts=seg.split('|');return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);})}</p>)}
+            {lyricsInfo.nextIsDrumSolo&&(<p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8',fontStyle:'italic'}}>Drum solo!</p>)}
+          </>):(<><p ref={lyricRef} style={{margin:'0 0 16px',lineHeight:'2',padding:'6px 0',whiteSpace:'nowrap',overflow:'hidden',animation:'lyricSlide 0.2s ease'}}><span style={{display:'inline-block',color:'#1a1a1a',borderBottom:'2.5px solid #1D6A8E',paddingBottom:'1px'}}>Drum solo!</span></p>{previewSegs.length>0&&(<p style={{margin:0,fontSize:'clamp(0.85rem,3.5vw,1rem)',color:'#C0BCB7',lineHeight:'1.8'}}>{previewSegs.map((seg,i)=>{const parts=seg.split('|');return(<React.Fragment key={i}>{i>0&&' '}{parts.map((part,pi)=>(<React.Fragment key={pi}>{pi>0&&' '}<span style={{background:'#E8F5FB',borderRadius:'2px',padding:'0 2px',color:'#A8A4A0',fontWeight:'700'}}>{part[0]}</span><span style={{color:'#BDBAB5'}}>{part.slice(1)}</span></React.Fragment>))}</React.Fragment>);})</}</p>)}</>)}
+        </div>)}
+        {!settings.text&&<div style={{flex:1}}/>}
+        {settings.visual&&(<div style={{marginBottom:'16px'}}><BeatRow timeSig={song.timeSig} grouping={song.grouping} activeBeat={isPaused?-1:activeBeat} noAccent={phaseTag==='Drum solo!'&&!isPaused}/></div>)}
+        <div style={{height:'36px',marginBottom:'16px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {lastFeedback&&(<div key={lastFeedback.id} style={{display:'flex',alignItems:'center',gap:'10px',animation:'popIn 0.18s ease'}}>
+            <span style={{fontWeight:'700',fontSize:'0.9rem',color:fbColor(lastFeedback.res)}}>{fbLabel(lastFeedback.res)}</span>
+            {lastFeedback.ms!==null&&(<span style={{fontFamily:'monospace',fontSize:'0.72rem',color:'#B0A89E'}}>{lastFeedback.ms>0?'+':''}{lastFeedback.ms} ms</span>)}
+            <div style={{display:'flex',gap:'3px',alignItems:'center'}}>
+              {feedbackHist.slice(0,6).map(h=>(<div key={h.id} style={{width:'6px',height:'6px',borderRadius:'50%',background:fbColor(h.res),opacity:0.7}}/>))}
             </div>
-          )}
+          </div>)}
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'16px'}}>
+          <button onClick={()=>skipVerse(-1)} title="Wers wstecz" style={{width:'48px',height:'48px',borderRadius:'50%',border:'none',background:'#E5E2DC',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#666',fontSize:'1.1rem',transition:'background 0.15s'}}>⏮</button>
+          <button onClick={togglePause} style={{width:'72px',height:'72px',borderRadius:'50%',border:'none',background:'#1a1a1a',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.2)',transition:'transform 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+            {isPaused?(<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>):(<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>)}
+          </button>
+          <button onClick={()=>skipVerse(1)} title="Wers wprzód" style={{width:'48px',height:'48px',borderRadius:'50%',border:'none',background:'#E5E2DC',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#666',fontSize:'1.1rem',transition:'background 0.15s'}}>⏭</button>
         </div>
       </div>
-
-      {/* Mic */}
-      {micError&&<div style={{padding:'10px 14px',background:'#FEF5F4',border:'1px solid #FAD3CE',borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5',marginBottom:'8px'}}>⚠️ {micError}</div>}
-      {micOn&&(
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'}}>
-            <div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}}/>
-            <span style={{fontSize:'0.72rem',color:'#AAA'}}>Mikrofon aktywny</span>
-            {liveMidi&&<span style={{fontSize:'0.72rem',color:'#888',fontFamily:'monospace'}}>{noteName(Math.round(liveMidi))}</span>}
-          </div>
-          <div style={{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'}}>
-            <div style={{height:'100%',borderRadius:'2px',width:`${volume*100}%`,background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',transition:'width 0.05s'}}/>
-          </div>
-          <div style={{display:'flex',justifyContent:'space-between',marginTop:'5px'}}>
-            <span style={{fontSize:'0.62rem',color:'#CCC'}}>Czułość mikrofonu</span>
-            <span style={{fontFamily:'monospace',fontSize:'0.62rem',color:'#CCC'}}>{Math.round(sensitivity*1000)}</span>
-          </div>
-          <input type="range" min="5" max="80" value={Math.round(sensitivity*1000)} onChange={e=>setSensitivity(Number(e.target.value)/1000)}/>
-        </div>
-      )}
+      <div style={{marginBottom:'16px'}}>{(()=>{const MIN=40,MAX=220,STEP=10;const defaultBpm=song.defaultBpm||80;const defaultPct=(defaultBpm-MIN)/(MAX-MIN);return(<><div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'6px'}}><span style={{fontSize:'0.72rem',color:'#AAA',letterSpacing:'0.05em'}}>Tempo</span><span style={{fontFamily:'monospace',fontSize:'0.8rem',color:'#888'}}>{bpm} BPM</span></div><div style={{position:'relative',marginBottom:'2px',height:'18px'}}><span style={{position:'absolute',left:`calc(22px + ${defaultPct} * (100% - 44px))`,transform:'translateX(-50%)',fontFamily:'monospace',fontSize:'0.78rem',fontWeight:'600',color:'#AAAAAA',whiteSpace:'nowrap'}}>{defaultBpm}</span></div><div style={{position:'relative'}}><div style={{position:'absolute',left:`calc(22px + ${defaultPct} * (100% - 44px))`,top:'50%',transform:'translate(-50%,-50%)',width:'2px',height:'18px',background:'#1a1a1a',borderRadius:'1px',pointerEvents:'none',zIndex:0}}/><input type="range" min={MIN} max={MAX} step={STEP} value={bpm} onChange={e=>setBpm(Number(e.target.value))}/></div></>);})()}</div>
+      {settings.voice&&(<div>
+        {micError&&(<div style={{padding:'10px 14px',marginBottom:'10px',background:'#FEF5F4',border:'1px solid #FAD3CE',borderRadius:'10px',fontSize:'0.78rem',color:'#B84234',lineHeight:'1.5'}}>⚠️ {micError}</div>)}
+        {micOn&&(<div style={{marginBottom:'8px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'7px',marginBottom:'5px'}}><div style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2E9B58',animation:'dot 1.4s ease infinite'}}/><span style={{fontSize:'0.72rem',color:'#AAA'}}>Mikrofon aktywny</span></div>
+          <div style={{height:'4px',background:'#F0EDE8',borderRadius:'2px',overflow:'hidden'}}><div style={{height:'100%',borderRadius:'2px',width:`${volume*100}%`,background:volume>0.75?'#C0402A':volume>0.4?'#BF9A20':'#2E9B58',transition:'width 0.05s,background 0.15s'}}/></div>
+        </div>)}
+        {micOn&&(<div style={{marginBottom:'8px'}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}><span style={{fontSize:'0.68rem',color:'#CCC'}}>Czułość mikrofonu</span><span style={{fontFamily:'monospace',fontSize:'0.68rem',color:'#CCC'}}>{Math.round(sensitivity*1000)}</span></div><input type="range" min="5" max="80" value={Math.round(sensitivity*1000)} onChange={e=>setSensitivity(Number(e.target.value)/1000)}/></div>)}
+      </div>)}
     </div>
   );
 }
 
-
-/* ─── App root ──────────────────────────────────────────────── */
 function App(){
   const[screen,setScreen]=useState('setup');
   const[cfg,setCfg]=useState(null);
   const[playKey,setPlayKey]=useState(0);
-
   const handleStart=c=>{setCfg(c);setScreen('playing');setPlayKey(k=>k+1);};
   const handleRestart=()=>setPlayKey(k=>k+1);
-
-  return(
-    <div className="shell">
-      {screen==='setup'&&(
-        <SetupScreen onStart={handleStart}/>
-      )}
-      {screen==='playing'&&cfg&&(
-        cfg.song.type==='pitch'?(
-          <PitchScreen
-            key={playKey}
-            song={cfg.song}
-            settings={cfg.settings}
-            onStop={()=>setScreen('setup')}
-          />
-        ):(
-          <PlayingScreen
-            key={playKey}
-            song={cfg.song}
-            settings={cfg.settings}
-            bpm={cfg.bpm}
-            onStop={()=>setScreen('setup')}
-            onRestart={handleRestart}
-          />
-        )
-      )}
-    </div>
-  );
+  return(<div className="shell">
+    {screen==='setup'&&(<SetupScreen onStart={handleStart}/>)}
+    {screen==='playing'&&cfg&&(<PlayingScreen key={playKey} song={cfg.song} settings={cfg.settings} bpm={cfg.bpm} onStop={()=>setScreen('setup')} onRestart={handleRestart}/>)}
+  </div>);
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-
 </script>
 </body>
 </html>
